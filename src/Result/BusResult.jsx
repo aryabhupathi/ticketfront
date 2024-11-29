@@ -3,8 +3,6 @@ import { useLocation } from "react-router-dom";
 import SingleBus from "../Bus/SingleBus";
 import RoundBus from "../Bus/Roundbus";
 import Layout from "../Layout";
-import NewSingleBus from "../Bus/NewSingleBus";
-
 const BusResults = () => {
   const location = useLocation();
   const { formData } = location.state;
@@ -15,5 +13,4 @@ const BusResults = () => {
     </Layout>
   );
 };
-
 export default BusResults;

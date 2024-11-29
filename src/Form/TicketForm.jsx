@@ -95,7 +95,6 @@ const TicketReservationForm = () => {
       });
       return;
     }
-    console.log("Form data submitted:", formData);
     if (formData.transportType === "bus") {
       navigate("/results/bus", { state: { formData } });
     } else if (formData.transportType === "train") {
@@ -276,38 +275,9 @@ const TicketReservationForm = () => {
                 />
               </Grid>
             </Grid>
-            
-              {/* {formData.tripType === "round" ? (
-                <Grid container spacing={2} sx={{ mt: 2, mb: 2 }}>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      label="Departure Date"
-                      name="departureDate"
-                      value={formData.departureDate}
-                      onChange={handleChange}
-                      InputLabelProps={{ shrink: true }}
-                      required
-                      inputProps={{ min: formData.departureDate || today }}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      label="Return Date"
-                      name="returnDate"
-                      value={formData.returnDate}
-                      onChange={handleChange}
-                      InputLabelProps={{ shrink: true }}
-                      required
-                      inputProps={{ min: formData.departureDate || today }}
-                    />
-                  </Grid>
-                </Grid>
-              ) : (
-                <Grid item xs={12}>
+            {formData.tripType === "round" ? (
+              <Grid container spacing={2} sx={{ mt: 2, mb: 2 }}>
+                <Grid item size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     type="date"
@@ -317,60 +287,43 @@ const TicketReservationForm = () => {
                     onChange={handleChange}
                     InputLabelProps={{ shrink: true }}
                     required
-                    inputProps={{ min: formData.departureDate || today }}
+                    inputProps={{ min: today }}
+                    sx={{ mt: 1 }}
                   />
                 </Grid>
-              )} */}
-              {formData.tripType === "round" ? (
-  <Grid container spacing={2} sx={{ mt: 2, mb: 2 }}>
-    <Grid item size={{xs:12, sm:6}}>
-      <TextField
-        fullWidth
-        type="date"
-        label="Departure Date"
-        name="departureDate"
-        value={formData.departureDate}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-        required
-        inputProps={{ min: today }} // Ensure minimum date is today
-        sx={{ mt: 1 }} // Add margin for consistency
-      />
-    </Grid>
-    <Grid item size={{xs:12, sm:6}}>
-      <TextField
-        fullWidth
-        type="date"
-        label="Return Date"
-        name="returnDate"
-        value={formData.returnDate}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-        required
-        inputProps={{ min: formData.departureDate || today }} // Ensure minimum date is after departure
-        sx={{ mt: 1 }} // Add margin for consistency
-      />
-    </Grid>
-  </Grid>
-) : (
-  <Grid container sx={{ mt: 2, mb: 2 }}>
-    <Grid item size={{xs:12}}>
-      <TextField
-        fullWidth
-        type="date"
-        label="Departure Date"
-        name="departureDate"
-        value={formData.departureDate}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-        required
-        inputProps={{ min: today }} // Ensure minimum date is today
-        sx={{ mt: 1 }} // Add margin for consistency
-      />
-    </Grid>
-  </Grid>
-)}
-
+                <Grid item size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Return Date"
+                    name="returnDate"
+                    value={formData.returnDate}
+                    onChange={handleChange}
+                    InputLabelProps={{ shrink: true }}
+                    required
+                    inputProps={{ min: formData.departureDate || today }}
+                    sx={{ mt: 1 }}
+                  />
+                </Grid>
+              </Grid>
+            ) : (
+              <Grid container sx={{ mt: 2, mb: 2 }}>
+                <Grid item size={{ xs: 12 }}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Departure Date"
+                    name="departureDate"
+                    value={formData.departureDate}
+                    onChange={handleChange}
+                    InputLabelProps={{ shrink: true }}
+                    required
+                    inputProps={{ min: today }}
+                    sx={{ mt: 1 }}
+                  />
+                </Grid>
+              </Grid>
+            )}
             <Button variant="contained" color="primary" type="submit" fullWidth>
               Search
             </Button>

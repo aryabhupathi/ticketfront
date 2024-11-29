@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -20,6 +21,7 @@ const SingleBus = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { formData } = location.state;
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [selectedSeats, setSelectedSeats] = useState({});
   const [fare, setFare] = useState(0);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
@@ -35,7 +37,7 @@ const SingleBus = () => {
     const fetchBusData = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/bus/search?source=${formData.source}&destination=${formData.destination}`
+          `${apiUrl}/api/bus/search?source=${formData.source}&destination=${formData.destination}`
         );
         if (!response.ok) {
           throw new Error("Error fetching buses");
@@ -49,12 +51,11 @@ const SingleBus = () => {
         );
       } catch (error) {
         setError(error.message);
-        console.log(error, "Fetch Error");
       }
     };
 
     fetchBusData();
-  }, [formData.source, formData.destination]);
+  }, [formData.source, formData.destination, apiUrl]);
 
   const handleSeatClick = (seat) => {
     if (
@@ -62,7 +63,7 @@ const SingleBus = () => {
       bookingConfirmed ||
       selectedBus.bookedSeats.includes(seat)
     ) {
-      return; // Prevent clicking if seat is already booked or booking is confirmed
+      return;
     }
     setSelectedSeats((prevSelectedSeats) => {
       const currentSelection = prevSelectedSeats[selectedBus._id] || [];
@@ -86,7 +87,7 @@ const SingleBus = () => {
   const updateSeatsInDatabase = async (busId, updatedSeats, seatNo) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/bus/update-bus-seats`,
+        `${apiUrl}/api/bus/update-bus-seats`,
         {
           method: "PUT",
           headers: {

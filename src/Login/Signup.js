@@ -15,123 +15,105 @@ import {
   CardActions,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-
 const Signup = () => {
-  const { signup, checkUserExists } = useContext(AuthContext); // Assume checkUserExists is provided by AuthContext
+  const { signup, checkUserExists } = useContext(AuthContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [enteredOtp, setEnteredOtp] = useState(""); // For user input
+  const [enteredOtp, setEnteredOtp] = useState("");
   const [captcha, setCaptcha] = useState("");
-  const [enteredCaptcha, setEnteredCaptcha] = useState(""); // For user input
-  const [signupMode, setSignupMode] = useState("Email"); // Default to "Email"
+  const [enteredCaptcha, setEnteredCaptcha] = useState("");
+  const [signupMode, setSignupMode] = useState("Email");
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // To toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [userExists, setUserExists] = useState(false); // New state for user existence
-
-  // Function to generate a random OTP (mock)
+  const [userExists, setUserExists] = useState(false);
   const getOtp = () => {
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setOtp(newOtp);
     setOtpSent(true);
     setTimeout(() => {
-      setOtpSent(false); // Change button back after 2 seconds
+      setOtpSent(false);
     }, 2000);
   };
-
-  // Function to generate CAPTCHA (letters and numbers)
   const generateCaptcha = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let newCaptcha = '';
+    const characters =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let newCaptcha = "";
     for (let i = 0; i < 6; i++) {
-      newCaptcha += characters.charAt(Math.floor(Math.random() * characters.length));
+      newCaptcha += characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
     }
     setCaptcha(newCaptcha);
   };
-
-  // Generate CAPTCHA on component load
   useEffect(() => {
     generateCaptcha();
   }, []);
-
-  // Validation functions
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
-
   const validatePassword = (password) => {
-    const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,}$/;
+    const re =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{5,}$/;
     return re.test(password);
   };
-
   const validateMobile = (mobile) => {
-    const re = /^[0-9]{10}$/; // Adjust according to the mobile format you want
+    const re = /^[0-9]{10}$/;
     return re.test(mobile);
   };
-
   const validateUsername = (name) => {
     return name.length >= 3;
   };
-
-  
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // Clear any previous errors
-
-    // Basic validations
+    setError("");
     if (!validateUsername(name)) {
-        setError("Username must be at least 3 characters long.");
-        return;
+      setError("Username must be at least 3 characters long.");
+      return;
     }
-
     if (signupMode === "Email") {
-        if (!validateEmail(email)) {
-            setError("Invalid email format.");
-            return;
-        }
+      if (!validateEmail(email)) {
+        setError("Invalid email format.");
+        return;
+      }
     } else {
-        if (!validateMobile(mobile)) {
-            setError("Invalid mobile number format.");
-            return;
-        }
+      if (!validateMobile(mobile)) {
+        setError("Invalid mobile number format.");
+        return;
+      }
     }
-
     if (!validatePassword(password)) {
-        setError("Password must be at least 5 characters long, and include a number, a capital letter, and a special character.");
-        return;
+      setError(
+        "Password must be at least 5 characters long, and include a number, a capital letter, and a special character."
+      );
+      return;
     }
-
     if (enteredCaptcha !== captcha) {
-        setError("Captcha does not match.");
-        return;
+      setError("Captcha does not match.");
+      return;
     }
-
-    // Check if the user exists based on signup mode
-    const userExists = await checkUserExists(signupMode === "Email" ? email : null, signupMode === "Mobile" ? mobile : null);
+    const userExists = await checkUserExists(
+      signupMode === "Email" ? email : null,
+      signupMode === "Mobile" ? mobile : null
+    );
     if (userExists) {
-        setError("User already exists. Please reset your password.");
-        setUserExists(true);
-        return;
+      setError("User already exists. Please reset your password.");
+      setUserExists(true);
+      return;
     }
-
-    // Proceed with signup
     if (signupMode === "Email") {
-        await signup(name, email, password);
+      await signup(name, email, password);
     } else {
-        await signup(name, mobile, password);
+      await signup(name, mobile, password);
     }
-
-    setError(""); // Clear any errors after validation passes
-};
-
-
+    setError("");
+  };
   return (
     <Card sx={{ maxWidth: 500, margin: "auto", marginTop: 4, padding: 2 }}>
       <CardContent>
@@ -148,7 +130,6 @@ const Signup = () => {
           <FormControlLabel value="Email" control={<Radio />} label="Email" />
           <FormControlLabel value="Mobile" control={<Radio />} label="Mobile" />
         </RadioGroup>
-
         <TextField
           fullWidth
           margin="normal"
@@ -158,7 +139,6 @@ const Signup = () => {
           onChange={(e) => setName(e.target.value)}
           required
         />
-
         {signupMode === "Email" ? (
           <>
             <TextField
@@ -202,7 +182,11 @@ const Signup = () => {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <IconButton
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
                       {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -279,7 +263,11 @@ const Signup = () => {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <IconButton
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
                       {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -289,9 +277,7 @@ const Signup = () => {
             <Button onClick={getOtp} variant="contained" disabled={otpSent}>
               {otpSent ? "Resend OTP" : "Get OTP"}
             </Button>
-
             {otp && <Typography variant="body1">Your OTP is: {otp}</Typography>}
-
             <TextField
               fullWidth
               margin="normal"
@@ -304,16 +290,20 @@ const Signup = () => {
             />
           </>
         )}
-
         {error && <Typography color="error">{error}</Typography>}
       </CardContent>
       <CardActions>
-        <Button type="submit" variant="contained" color="primary" fullWidth onClick={handleSubmit}>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          fullWidth
+          onClick={handleSubmit}
+        >
           {userExists ? "Reset Password" : "Sign Up"}
         </Button>
       </CardActions>
     </Card>
   );
 };
-
 export default Signup;

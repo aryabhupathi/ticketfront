@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -10,14 +11,14 @@ import {
   AccordionDetails,
   Modal,
 } from "@mui/material";
-import Grid from '@mui/material/Grid2'
+import Grid from "@mui/material/Grid2";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import TicketStepper from "./TicketStepper"; // Make sure you have this component imported
+import TicketStepper from "./TicketStepper";
 import { useLocation } from "react-router-dom";
-
 const SingleFlight = () => {
   const location = useLocation();
   const { formData } = location.state;
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [selectedSeats, setSelectedSeats] = useState({});
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
@@ -29,13 +30,11 @@ const SingleFlight = () => {
   const [trip, setTrip] = useState([]);
   const [error, setError] = useState(null);
   const [bookedSeats, setBookedSeats] = useState([]);
-
-  // Fetch available flights based on source and destination
   useEffect(() => {
     const fetchFlightData = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/flight/search?source=${formData.source}&destination=${formData.destination}`
+          `${apiUrl}/api/flight/search?source=${formData.source}&destination=${formData.destination}`
         );
         if (!response.ok) {
           throw new Error("Error fetching flights");
@@ -44,17 +43,14 @@ const SingleFlight = () => {
         setTrip(data);
       } catch (error) {
         setError(error.message);
-        console.log(error, "Fetch Error");
       }
     };
     fetchFlightData();
-  }, [formData.source, formData.destination]);
-
-  // Fetch booked seats when a flight is selected
+  }, [formData.source, formData.destination,apiUrl]);
   const fetchBookedSeats = async (flightId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/flight/bookedSeats?flightId=${flightId}`
+        `${apiUrl}/api/flight/bookedSeats?flightId=${flightId}`
       );
       if (!response.ok) {
         throw new Error("Error fetching booked seats");
@@ -65,9 +61,7 @@ const SingleFlight = () => {
       console.error("Error fetching booked seats:", error);
     }
   };
-
   const handleCloseSnackbar = () => setShowMessage(false);
-
   const handleFlightSelect = async (flight) => {
     setSelectedFlight(flight);
     setSelectedSeats((prevSeats) => ({
@@ -76,15 +70,11 @@ const SingleFlight = () => {
     }));
     setBookingConfirmed(false);
     setStartBooking(false);
-
-    // Fetch the booked seats for the selected flight
-    await fetchBookedSeats(flight._id); // Use the correct property for flight ID
+    await fetchBookedSeats(flight._id);
   };
-
   const handleStartBooking = () => {
     setStartBooking(true);
   };
-
   const handleBookSeats = () => {
     if (selectedSeats[selectedFlight.flightName]?.length > 0) {
       setOpenConfirmModal(true);
@@ -92,18 +82,15 @@ const SingleFlight = () => {
       alert("Please select seats before booking.");
     }
   };
-
   const handleTotalFareUpdate = (fare) => {
     setTotalFare(fare);
   };
-
   const handleConfirmBooking = async () => {
     const payload = {
-      flightId: selectedFlight._id, // Use the correct property for flight ID
+      flightId: selectedFlight._id,
       seats: selectedSeats[selectedFlight.flightName] || [],
       totalFare,
     };
-
     if (
       !payload.flightId ||
       payload.seats.length === 0 ||
@@ -112,22 +99,16 @@ const SingleFlight = () => {
       alert("Flight ID, seats, and total fare are required.");
       return;
     }
-
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/flight/bookings",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
+      const response = await fetch(`${apiUrl}/api/flight/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
       if (response.ok) {
         const data = await response.json();
-        console.log("Booking confirmed:", data);
         setBookingConfirmed(true);
         setShowMessage(true);
       } else {
@@ -143,16 +124,13 @@ const SingleFlight = () => {
       setOpenConfirmModal(false);
     }
   };
-
   const confirmBooking = () => {
     handleConfirmBooking();
   };
-
   const handleChange = (flightIndex) => {
     setExpanded(expanded === flightIndex ? false : flightIndex);
     handleFlightSelect(trip[flightIndex]);
   };
-
   return (
     <Box
       sx={{
@@ -177,95 +155,76 @@ const SingleFlight = () => {
       >
         Available Flights from {formData.source} to {formData.destination}
       </Typography>
-
-        <Grid size={{xs:12, sm:9}} sx={{ padding: 2 }}>
-          {trip.length > 0 ? (
-            trip.map((details, index) => (
-              <Accordion
-                key={index}
-                expanded={expanded === index}
-                onChange={() => handleChange(index)}
-                sx={{ mb: 2 }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "blue", fontWeight: "bold" }}
+      <Grid size={{ xs: 12, sm: 9 }} sx={{ padding: 2 }}>
+        {trip.length > 0 ? (
+          trip.map((details, index) => (
+            <Accordion
+              key={index}
+              expanded={expanded === index}
+              onChange={() => handleChange(index)}
+              sx={{ mb: 2 }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography
+                  variant="h6"
+                  sx={{ color: "blue", fontWeight: "bold" }}
+                >
+                  {details.flightName}
+                  <span style={{ color: "gray" }}> &#x2794; </span>
+                </Typography>
+                <Typography variant="body1" sx={{ color: "green", ml: 2 }}>
+                  Route: {details.source} to {details.destination}
+                  <span style={{ color: "gray" }}> &#x2794; </span>
+                </Typography>
+                <Typography variant="body1" sx={{ color: "orange", ml: 2 }}>
+                  Fare per seat: ${details.baseFare}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box>
+                  <Box
+                    sx={{
+                      border: "1px solid lightgray",
+                      borderRadius: "4px",
+                      padding: 2,
+                      mb: 2,
+                      backgroundColor: "#f9f9f9",
+                    }}
                   >
-                    {details.flightName}
-                    <span style={{ color: "gray" }}> &#x2794; </span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: "green", ml: 2 }}>
-                    Route: {details.source} to {details.destination}
-                    <span style={{ color: "gray" }}> &#x2794; </span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: "orange", ml: 2 }}>
-                    Fare per seat: ${details.baseFare}
-                  </Typography>
-                </AccordionSummary>
-
-                <AccordionDetails>
-                  <Box>
-                    <Box
-                      sx={{
-                        border: "1px solid lightgray",
-                        borderRadius: "4px",
-                        padding: 2,
-                        mb: 2,
-                        backgroundColor: "#f9f9f9",
-                      }}
-                    >
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "blue", mr: 1 }}
-                        >
-                          Start Time: {details.startTime}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "blue" }}>
-                          | End Time: {details.endTime}
-                        </Typography>
-                      </Box>
-
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "green", mt: 1 }}
-                      >
-                        Stops: {details.stops.join(", ")}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <Typography variant="body2" sx={{ color: "blue", mr: 1 }}>
+                        Start Time: {details.startTime}
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "green", mt: 1 }}
-                      >
-                        Base Price: ${details.baseFare}
+                      <Typography variant="body2" sx={{ color: "blue" }}>
+                        | End Time: {details.endTime}
                       </Typography>
-
-                      <Button onClick={handleStartBooking}>Proceed</Button>
-
-                      {startBooking && !bookingConfirmed && (
-                        <TicketStepper
-                          selectedFlight={details}
-                          seatLayout={details.layout}
-                          seatCategories={details.seatCategories}
-                          onTotalFare={handleTotalFareUpdate}
-                          setSelectedSeats={setSelectedSeats}
-                          bookedSeats={bookedSeats} // Pass the booked seats here
-                        />
-                      )}
                     </Box>
-
+                    <Typography variant="body2" sx={{ color: "green", mt: 1 }}>
+                      Stops: {details.stops.join(", ")}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "green", mt: 1 }}>
+                      Base Price: ${details.baseFare}
+                    </Typography>
+                    <Button onClick={handleStartBooking}>Proceed</Button>
+                    {startBooking && !bookingConfirmed && (
+                      <TicketStepper
+                        selectedFlight={details}
+                        seatLayout={details.layout}
+                        seatCategories={details.seatCategories}
+                        onTotalFare={handleTotalFareUpdate}
+                        setSelectedSeats={setSelectedSeats}
+                        bookedSeats={bookedSeats}
+                      />
+                    )}
                   </Box>
-                </AccordionDetails>
-              </Accordion>
-            ))
-          ) : (
-            <Alert severity="error">No flights found!</Alert>
-          )}
-        </Grid>
-
-      {/* Confirmation Modal */}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          ))
+        ) : (
+          <Alert severity="error">No flights found!</Alert>
+        )}
+      </Grid>
       <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
         <Box
           sx={{
@@ -291,8 +250,6 @@ const SingleFlight = () => {
           </Button>
         </Box>
       </Modal>
-
-      {/* Snackbar */}
       <Snackbar
         open={showMessage}
         autoHideDuration={6000}
@@ -306,5 +263,4 @@ const SingleFlight = () => {
     </Box>
   );
 };
-
 export default SingleFlight;

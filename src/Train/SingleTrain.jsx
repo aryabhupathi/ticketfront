@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -23,6 +24,7 @@ const SingleTrain = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { formData } = location.state;
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [trip, setTrip] = useState([]);
   const [error, setError] = useState("");
   const [selectedSeats, setSelectedSeats] = useState({});
@@ -37,7 +39,7 @@ const SingleTrain = () => {
     const fetchTrainData = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/train/search?source=${formData.source}&destination=${formData.destination}`
+          `${apiUrl}/api/train/search?source=${formData.source}&destination=${formData.destination}`
         );
         if (!response.ok) {
           throw new Error("Error fetching trains");
@@ -56,7 +58,7 @@ const SingleTrain = () => {
       }
     };
     fetchTrainData();
-  }, [formData.source, formData.destination]);
+  }, [formData.source, formData.destination,apiUrl]);
   const handleSeatChange = (trainIndex, coachIndex, coachFare, increment) => {
     const coachKey = `${trainIndex}-${coachIndex}`;
     setSelectedSeats((prevState) => {
@@ -121,7 +123,7 @@ const SingleTrain = () => {
     }
     try {
       const response = await fetch(
-        `http://localhost:5000/api/train/update-train-seats`,
+        `${apiUrl}/api/train/update-train-seats`,
         {
           method: "PUT",
           headers: {

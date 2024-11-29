@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import {
   Stepper,
@@ -206,7 +207,6 @@ export default function RoundTicketStepper({
         : [...prev, benefitName]
     );
   };
-
   const renderSeats = () => {
     const columnCount = seatLayout.seatConfiguration[0].length;
     const transposedLayout = Array(columnCount)
@@ -214,88 +214,83 @@ export default function RoundTicketStepper({
       .map((_, colIndex) =>
         seatLayout.seatConfiguration.map((row) => row[colIndex])
       );
-  
     return (
-      
       <Grid container justifyContent="center" spacing={2}>
-  <Box
-    display="flex"
-    flexDirection="row"
-    mt={2}
-    padding={2}
-    mb={2}
-    sx={{
-      overflowX: "auto",
-      overflowY: "hidden",
-      columnGap: { xs: "8px", sm: "12px", md: "16px" },
-    }}
-  >
-    {transposedLayout.map((seatColumn, columnIndex) => (
-      <Box
-        key={columnIndex} 
-        flexDirection="row"
-        columnGap={{ xs: "8px", sm: "12px", md: "16px" }}
-        mb={2}
-      >
-        {seatColumn.map((seat) => {
-          const isBooked =
-            tripType === "outbound"
-              ? outboundBookedSeats.includes(seat)
-              : returnBookedSeats.includes(seat);
-
-          return (
+        <Box
+          display="flex"
+          flexDirection="row"
+          mt={2}
+          padding={2}
+          mb={2}
+          sx={{
+            overflowX: "auto",
+            overflowY: "hidden",
+            columnGap: { xs: "8px", sm: "12px", md: "16px" },
+          }}
+        >
+          {transposedLayout.map((seatColumn, columnIndex) => (
             <Box
-              key={seat}
+              key={columnIndex}
+              flexDirection="row"
+              columnGap={{ xs: "8px", sm: "12px", md: "16px" }}
               mb={2}
-              sx={{
-                width: { xs: "45px", sm: "55px", md: "65px" },
-                height: { xs: "45px", sm: "55px", md: "65px" },
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: `1px solid ${getSeatBorderColor(seat)}`,
-                bgcolor: seats.includes(seat)
-                  ? "lightgreen"
-                  : isBooked
-                  ? "lightgray"
-                  : "white",
-                pointerEvents: isBooked ? "none" : "auto",
-                cursor: isBooked ? "not-allowed" : "pointer",
-                color: isBooked ? "gray" : "black",
-                transition: "transform 0.2s",
-                borderRadius: "8px",
-                "&:hover": {
-                  transform: !isBooked ? "scale(1.1)" : "none",
-                },
-              }}
-              onClick={() => !isBooked && handleSeatClick(seat)}
             >
-              <AirlineSeatReclineExtraIcon
-                fontSize="small"
-                sx={{
-                  color: getSeatBorderColor(seat),
-                  marginRight: "4px",
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  fontSize: { xs: "0.7rem", sm: "0.8rem", md: "1rem" },
-                }}
-              >
-                {seat}
-              </Typography>
+              {seatColumn.map((seat) => {
+                const isBooked =
+                  tripType === "outbound"
+                    ? outboundBookedSeats.includes(seat)
+                    : returnBookedSeats.includes(seat);
+                return (
+                  <Box
+                    key={seat}
+                    mb={2}
+                    sx={{
+                      width: { xs: "45px", sm: "55px", md: "65px" },
+                      height: { xs: "45px", sm: "55px", md: "65px" },
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: `1px solid ${getSeatBorderColor(seat)}`,
+                      bgcolor: seats.includes(seat)
+                        ? "lightgreen"
+                        : isBooked
+                        ? "lightgray"
+                        : "white",
+                      pointerEvents: isBooked ? "none" : "auto",
+                      cursor: isBooked ? "not-allowed" : "pointer",
+                      color: isBooked ? "gray" : "black",
+                      transition: "transform 0.2s",
+                      borderRadius: "8px",
+                      "&:hover": {
+                        transform: !isBooked ? "scale(1.1)" : "none",
+                      },
+                    }}
+                    onClick={() => !isBooked && handleSeatClick(seat)}
+                  >
+                    <AirlineSeatReclineExtraIcon
+                      fontSize="small"
+                      sx={{
+                        color: getSeatBorderColor(seat),
+                        marginRight: "4px",
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontSize: { xs: "0.7rem", sm: "0.8rem", md: "1rem" },
+                      }}
+                    >
+                      {seat}
+                    </Typography>
+                  </Box>
+                );
+              })}
             </Box>
-          )
-        })}
-      </Box>
-    ))}
-  </Box>
-</Grid>
-
+          ))}
+        </Box>
+      </Grid>
     );
   };
-  
   const renderMeals = () => {
     return (
       <Grid
@@ -340,8 +335,8 @@ export default function RoundTicketStepper({
   const renderBenefits = () => {
     return (
       <Grid
-      size={12}
-      spacing={2}
+        size={12}
+        spacing={2}
         sx={{
           display: "flex",
           justifyContent: "center",

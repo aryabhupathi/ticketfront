@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import {
   Box,
@@ -11,7 +12,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import Grid from '@mui/material/Grid2'
+import Grid from "@mui/material/Grid2";
 import { useAuth } from "../authContext";
 const additionalProducts = [
   { name: "Extra Baggage", price: 50 },
@@ -28,6 +29,7 @@ const TicketStepper = ({
   bookedSeats = [],
 }) => {
   const { user } = useAuth();
+  const apiUrl = process.env.REACT_APP_API_URL;
   const steps = ["Select Seat", "Select Additionals", "Review"];
   const [activeStep, setActiveStep] = useState(0);
   const [selectedSeatSelections, setSelectedSeatSelections] = useState({});
@@ -38,26 +40,29 @@ const TicketStepper = ({
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [userLoginWarning, setUserLoginWarning] = useState(false);
   const handleSeatSelect = (seat) => {
-    const isSelected = Object.values(selectedSeatSelections).flat().includes(seat);
-    const rowMatch = seat.match(/^(\d+)/); 
+    const isSelected = Object.values(selectedSeatSelections)
+      .flat()
+      .includes(seat);
+    const rowMatch = seat.match(/^(\d+)/);
     const rowIndex = rowMatch ? parseInt(rowMatch[1], 10) : null;
-    const seatCategory = rowIndex !== null
-      ? seatCategories.find((category) => category.rows.includes(rowIndex))
-      : null;
+    const seatCategory =
+      rowIndex !== null
+        ? seatCategories.find((category) => category.rows.includes(rowIndex))
+        : null;
     if (!seatCategory) return;
     const farePerSeat = seatCategory.price;
     setSelectedSeatSelections((prev) => {
       const updatedSeats = isSelected
         ? Object.entries(prev).reduce((acc, [key, seats]) => {
-              const filteredSeats = seats.filter((s) => s !== seat);
-              if (filteredSeats.length > 0) {
-                  acc[key] = filteredSeats; // Keep non-empty arrays
-              }
-              return acc;
+            const filteredSeats = seats.filter((s) => s !== seat);
+            if (filteredSeats.length > 0) {
+              acc[key] = filteredSeats;
+            }
+            return acc;
           }, {})
         : {
-              ...prev,
-              [farePerSeat]: [...(prev[farePerSeat] || []), seat],
+            ...prev,
+            [farePerSeat]: [...(prev[farePerSeat] || []), seat],
           };
       const newTotalFare = Object.entries(updatedSeats).reduce(
         (total, [price, seats]) => total + price * seats.length,
@@ -77,13 +82,15 @@ const TicketStepper = ({
       const isSelected = prev[product] !== undefined;
       const newSelections = { ...prev };
       if (isSelected) {
-        delete newSelections[product]; // Deselecting the product
+        delete newSelections[product];
       } else {
-        newSelections[product] = price; // Selecting the product
+        newSelections[product] = price;
       }
-      // Calculate the new total fare
       const newTotalFare =
-        Object.values(newSelections).reduce((total, itemPrice) => total + itemPrice, 0) +
+        Object.values(newSelections).reduce(
+          (total, itemPrice) => total + itemPrice,
+          0
+        ) +
         Object.entries(selectedSeatSelections).reduce(
           (total, [price, seats]) => total + price * seats.length,
           0
@@ -109,22 +116,18 @@ const TicketStepper = ({
       return;
     }
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/flight/bookings",
-        {
-          method: "POST", // Use POST for booking
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/flight/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
       if (response.ok) {
         const data = await response.json();
-        console.log("Booking confirmed:", data);
         setConfirm(true);
-        setBookingConfirmed(true); // Set booking confirmed state
-        setSnackbarOpen(true); // Open the snackbar
+        setBookingConfirmed(true);
+        setSnackbarOpen(true);
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message}`);
@@ -140,17 +143,19 @@ const TicketStepper = ({
     setSnackbarOpen(false);
   };
   const handleNext = () => {
-    if (activeStep === 0 && Object.values(selectedSeatSelections).flat().length === 0) {
+    if (
+      activeStep === 0 &&
+      Object.values(selectedSeatSelections).flat().length === 0
+    ) {
       alert("Please select at least one seat.");
       return;
     }
-    // Check if the user is logged in before confirming the booking
     if (activeStep === steps.length - 1) {
       if (!user) {
-        setUserLoginWarning(true); // Show warning if not logged in
-        return; // Prevent confirmation if user is not logged in
+        setUserLoginWarning(true);
+        return;
       }
-      handleConfirmBooking(); // Proceed to confirm booking if user is logged in
+      handleConfirmBooking();
     } else {
       setActiveStep((prev) => prev + 1);
     }
@@ -176,7 +181,6 @@ const TicketStepper = ({
         return "gray";
     }
   };
-  // Render seat layout
   const renderSeats = () => {
     const columnCount = seatLayout.seatConfiguration[0].length;
     const transposedLayout = Array(columnCount)

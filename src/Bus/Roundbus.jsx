@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -19,6 +20,7 @@ const RoundBus = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { formData } = location.state;
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [selectedSeats, setSelectedSeats] = useState({
     outbound: {},
     return: {},
@@ -43,14 +45,12 @@ const RoundBus = () => {
   const [outboundTrip, setOutboundTrip] = useState([]);
   const [returnTrip, setReturnTrip] = useState([]);
   const [error, setError] = useState(null);
-
   const handleClose = () => setShowMessage(false);
-
   useEffect(() => {
     const fetchBusData = async (source, destination, setTrip) => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/bus/search?source=${source}&destination=${destination}`
+          `${apiUrl}/api/bus/search?source=${source}&destination=${destination}`
         );
         if (!response.ok) throw new Error("Error fetching buses");
         const data = await response.json();
@@ -59,14 +59,11 @@ const RoundBus = () => {
         );
       } catch (error) {
         setError(error.message);
-        console.error("Fetch Error:", error);
       }
     };
-
     fetchBusData(formData.source, formData.destination, setOutboundTrip);
     fetchBusData(formData.destination, formData.source, setReturnTrip);
-  }, [formData.source, formData.destination]);
-
+  }, [formData.source, formData.destination, apiUrl]);
   const handleSeatClick = (seat, tripType) => {
     const selectedBusForTrip = selectedBus[tripType];
     if (
@@ -75,9 +72,7 @@ const RoundBus = () => {
       selectedBusForTrip.bookedSeats.includes(seat)
     )
       return;
-
     if (selectedBusForTrip.noOfSeatsAvailable <= 0) return;
-
     setSelectedSeats((prevSelectedSeats) => {
       const currentBusSeats =
         prevSelectedSeats[tripType][selectedBusForTrip.busName] || [];
@@ -86,12 +81,10 @@ const RoundBus = () => {
         ? currentBusSeats.filter((s) => s !== seat)
         : [...currentBusSeats, seat];
       const updatedFare = updatedSeats.length * selectedBusForTrip.fare;
-
       setFare((prevFare) => ({
         ...prevFare,
         [tripType]: updatedFare,
       }));
-
       return {
         ...prevSelectedSeats,
         [tripType]: {
@@ -101,29 +94,24 @@ const RoundBus = () => {
       };
     });
   };
-
   const handleBusSelect = (bus, tripType) => {
     setSelectedBus((prev) => ({
       ...prev,
       [tripType]: bus,
     }));
-
     setSelectedSeats((prevSelectedSeats) => ({
       ...prevSelectedSeats,
       [tripType]: { [bus.busName]: [] },
     }));
-
     setFare((prevFare) => ({
       ...prevFare,
       [tripType]: 0,
     }));
-
     setBookingConfirmed((prev) => ({
       ...prev,
       [tripType]: false,
     }));
   };
-
   const handleBookSeats = (tripType) => {
     if (user) {
       setCurrentTripType(tripType);
@@ -132,19 +120,16 @@ const RoundBus = () => {
       setLoginAlert(true);
     }
   };
-
   const confirmBooking = async () => {
     const bookedSeatsOutbound =
       selectedSeats.outbound[selectedBus.outbound?.busName] || [];
     const bookedSeatsReturn =
       selectedSeats.return[selectedBus.return?.busName] || [];
-
     const updateSeatCount = async (bus, bookedSeats) => {
       const updatedSeatsCount = bus.noOfSeatsAvailable - bookedSeats.length;
       await updateSeatsInDatabase(bus._id, updatedSeatsCount, bookedSeats);
       return updatedSeatsCount;
     };
-
     if (selectedBus.outbound) {
       const updatedSeatsCountOutbound = await updateSeatCount(
         selectedBus.outbound,
@@ -165,7 +150,6 @@ const RoundBus = () => {
         )
       );
     }
-
     if (selectedBus.return) {
       const updatedSeatsCountReturn = await updateSeatCount(
         selectedBus.return,
@@ -183,28 +167,23 @@ const RoundBus = () => {
         )
       );
     }
-
     setBookingConfirmed({ outbound: true, return: true });
     setOpenConfirmModal(false);
     setTimeout(() => setShowMessage(true), 2000);
   };
-
   const updateSeatsInDatabase = async (busId, updatedSeats, seatNo) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/bus/update-bus-seats`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            busId,
-            updatedSeats,
-            seatNo,
-          }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/bus/update-bus-seats`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          busId,
+          updatedSeats,
+          seatNo,
+        }),
+      });
       const result = await response.json();
       if (!response.ok) {
         console.error("Failed to update seats:", result.message);
@@ -213,15 +192,12 @@ const RoundBus = () => {
       console.error("Error updating seats in database:", error);
     }
   };
-
   const handleChange = (busIndex, tripType) => {
     const isCurrentlyExpanded = expandedIndex[tripType] === busIndex;
-
     setExpandedIndex((prevExpandedIndex) => ({
       ...prevExpandedIndex,
       [tripType]: isCurrentlyExpanded ? false : busIndex,
     }));
-
     if (!isCurrentlyExpanded) {
       const selectedBusDetails =
         tripType === "outbound" ? outboundTrip[busIndex] : returnTrip[busIndex];
@@ -245,13 +221,11 @@ const RoundBus = () => {
       }));
     }
   };
-
   const downloadPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
-
     doc.setFontSize(22);
     doc.text("Bus Reservation Details", margin, margin);
     doc.setFontSize(12);
@@ -260,16 +234,12 @@ const RoundBus = () => {
       pageWidth - margin - 50,
       margin
     );
-
     doc.setFontSize(14);
     doc.text(`User Name: ${user.name}`, margin, margin + 20);
     doc.text(`From: ${formData.source}`, margin, margin + 30);
     doc.text(`To: ${formData.destination}`, margin, margin + 40);
-
-    // Outbound Trip
     doc.setFontSize(16);
     doc.text("Outbound Trip", margin, margin + 60);
-
     const outboundHeaders = [
       "Bus Name",
       "Route",
@@ -284,7 +254,6 @@ const RoundBus = () => {
           const selectedBusDetails = outboundTrip.find(
             (bus) => bus._id === busId
           );
-          console.log(selectedBusDetails, "ooooooooooooooo");
           if (selectedBusDetails) {
             const fare = selectedBusDetails.fare * seats.length;
             rows.push([
@@ -300,7 +269,6 @@ const RoundBus = () => {
       },
       []
     );
-
     doc.autoTable({
       head: [outboundHeaders],
       body: outboundTableRows,
@@ -315,14 +283,9 @@ const RoundBus = () => {
         4: { cellWidth: 20 },
       },
     });
-
-    // Move down for the return trip section
     const outboundEndY = doc.lastAutoTable.finalY + margin;
-
-    // Return Trip
     doc.setFontSize(16);
     doc.text("Return Trip", margin, outboundEndY + 20);
-
     const returnHeaders = ["Bus Name", "Route", "Start Time", "Seats", "Fare"];
     const returnTableRows = Object.keys(selectedSeats.return || {}).reduce(
       (rows, busId) => {
@@ -331,7 +294,6 @@ const RoundBus = () => {
           const selectedBusDetails = returnTrip.find(
             (bus) => bus._id === busId
           );
-          console.log(selectedBusDetails, "rrrrrrrrrrrrrrr");
           if (selectedBusDetails) {
             const fare = selectedBusDetails.fare * seats.length;
             rows.push([
@@ -347,7 +309,6 @@ const RoundBus = () => {
       },
       []
     );
-
     doc.autoTable({
       head: [returnHeaders],
       body: returnTableRows,
@@ -362,29 +323,22 @@ const RoundBus = () => {
         4: { cellWidth: 20 },
       },
     });
-
-    // Footer
     const footerText =
       "Thank you for your reservation! We look forward to serving you.";
     doc.setFontSize(10);
     doc.text(footerText, margin, pageHeight - margin);
-
-    // Save the PDF
     doc.save("bus-reservation-details.pdf");
   };
-
   return (
     <Box
       sx={{
         padding: 2,
-        backgroundImage:
-          "url(../../bus.webp)" /* Replace with your image path */,
-        backgroundSize: "cover" /* Ensure the image covers the entire area */,
-        backgroundRepeat: "no-repeat" /* Prevent repeating the image */,
-        backgroundPosition: "center" /* Center the image */,
-        backgroundAttachment: "fixed" /* Make the background fixed */,
-        minHeight:
-          "100vh" /* Ensure the container is at least the height of the viewport */,
+        backgroundImage: "url(../../bus.webp)",
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        minHeight: "100vh",
       }}
     >
       <Typography
@@ -399,8 +353,6 @@ const RoundBus = () => {
       >
         Available Buses from {formData.source} to {formData.destination}
       </Typography>
-
-      {/* Outbound Trip Logic */}
       {formData.tripType === "round" && (
         <>
           <Typography variant="h5" gutterBottom>
@@ -420,15 +372,11 @@ const RoundBus = () => {
                   >
                     {bus.busName}
                     <span style={{ color: "gray" }}> &#x2794; </span>{" "}
-                    {/* Arrow icon */}
                   </Typography>
-
                   <Typography variant="body1" sx={{ color: "green", ml: 2 }}>
                     Route: {bus.source} to {bus.destination}
                     <span style={{ color: "gray" }}> &#x2794; </span>{" "}
-                    {/* Arrow icon */}
                   </Typography>
-
                   <Typography variant="body1" sx={{ color: "orange", ml: 2 }}>
                     Fare per seat: ${bus.fare}
                   </Typography>
@@ -447,9 +395,8 @@ const RoundBus = () => {
                       <Typography variant="body2" sx={{ color: "blue", mr: 1 }}>
                         Start Time: {bus.startTime}
                       </Typography>
-
                       <Typography variant="body2" sx={{ color: "blue" }}>
-                        | End Time: {bus.endTime} {/* Pipe to separate times */}
+                        | End Time: {bus.endTime}
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ color: "green", mt: 1 }}>
@@ -478,7 +425,6 @@ const RoundBus = () => {
                           {bus.layout.seatConfiguration.map(
                             (column, colIndex) => {
                               const seatNumber = `${colIndex + 1}${rowLetter}`;
-
                               const isBooked =
                                 bus.bookedSeats.includes(seatNumber);
                               const isSelected =
@@ -487,7 +433,6 @@ const RoundBus = () => {
                                 );
                               const isDisabled =
                                 bookingConfirmed.outbound || isBooked;
-
                               return (
                                 <Box
                                   key={seatNumber}
@@ -522,7 +467,6 @@ const RoundBus = () => {
                         </Box>
                       ))}
                     </Box>
-
                     <Typography variant="h6" color="primary" mt={2}>
                       Total Fare: ${fare.outbound}
                     </Typography>
@@ -531,8 +475,6 @@ const RoundBus = () => {
               </Accordion>
             ))}
           </Box>
-
-          {/* Return Trip Logic */}
           <Typography variant="h5" gutterBottom>
             Return Trip
           </Typography>
@@ -550,15 +492,11 @@ const RoundBus = () => {
                   >
                     {bus.busName}
                     <span style={{ color: "gray" }}> &#x2794; </span>{" "}
-                    {/* Arrow icon */}
                   </Typography>
-
                   <Typography variant="body1" sx={{ color: "green", ml: 2 }}>
                     Route: {bus.source} to {bus.destination}
                     <span style={{ color: "gray" }}> &#x2794; </span>{" "}
-                    {/* Arrow icon */}
                   </Typography>
-
                   <Typography variant="body1" sx={{ color: "orange", ml: 2 }}>
                     Fare per seat: ${bus.fare}
                   </Typography>
@@ -577,9 +515,8 @@ const RoundBus = () => {
                       <Typography variant="body2" sx={{ color: "blue", mr: 1 }}>
                         Start Time: {bus.startTime}
                       </Typography>
-
                       <Typography variant="body2" sx={{ color: "blue" }}>
-                        | End Time: {bus.endTime} {/* Pipe to separate times */}
+                        | End Time: {bus.endTime}
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ color: "green", mt: 1 }}>
@@ -607,7 +544,6 @@ const RoundBus = () => {
                           {bus.layout.seatConfiguration.map(
                             (column, colIndex) => {
                               const seatNumber = `${colIndex + 1}${rowLetter}`;
-
                               const isBooked =
                                 bus.bookedSeats.includes(seatNumber);
                               const isSelected =
@@ -616,7 +552,6 @@ const RoundBus = () => {
                                 );
                               const isDisabled =
                                 bookingConfirmed.return || isBooked;
-
                               return (
                                 <Box
                                   key={seatNumber}
@@ -651,7 +586,6 @@ const RoundBus = () => {
                         </Box>
                       ))}
                     </Box>
-
                     <Typography variant="h6" color="primary" mt={2}>
                       Total Fare: ${fare.return}
                     </Typography>
@@ -677,7 +611,6 @@ const RoundBus = () => {
                           </Button>
                         </Box>
                       )}
-
                     {bookingConfirmed.return && (
                       <Box
                         sx={{
@@ -737,7 +670,6 @@ const RoundBus = () => {
           }}
         >
           <Typography variant="h6">Confirm Booking</Typography>
-
           <Box mt={2}>
             <Typography variant="h6" sx={{ textDecoration: "underline" }}>
               {" "}
@@ -769,7 +701,6 @@ const RoundBus = () => {
                 </Typography>
               </>
             )}
-
             <Typography variant="h6" sx={{ textDecoration: "underline" }}>
               {" "}
               Return Trip
@@ -800,7 +731,6 @@ const RoundBus = () => {
                 </Typography>
               </>
             )}
-
             <Button variant="contained" onClick={confirmBooking}>
               Confirm
             </Button>
@@ -810,5 +740,4 @@ const RoundBus = () => {
     </Box>
   );
 };
-
 export default RoundBus;

@@ -8,7 +8,6 @@ import { AuthProvider } from "./authContext";
 import Login from "./Login/Login";
 import Signup from "./Login/Signup";
 import ForgotPassword from "./Login/Forgot";
-
 const App = () => {
   return (
     <AuthProvider>
@@ -26,5 +25,4 @@ const App = () => {
     </AuthProvider>
   );
 };
-
 export default App;

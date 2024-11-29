@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -24,6 +25,7 @@ const RoundTrain = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { formData } = location.state;
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [outboundTrip, setOutboundTrip] = useState([]);
   const [returnTrip, setReturnTrip] = useState([]);
   const [error, setError] = useState("");
@@ -38,13 +40,11 @@ const RoundTrain = () => {
   const [expandedReturn, setExpandedReturn] = useState(null);
   const [snackbarError, setSnackbarError] = useState("");
   const [reserveAlert, setReserveAlert] = useState(false);
-
-  // Fetch train data
   useEffect(() => {
     const fetchTrainData = async () => {
       try {
         const outboundResponse = await fetch(
-          `http://localhost:5000/api/train/search?source=${formData.source}&destination=${formData.destination}`
+          `${apiUrl}/api/train/search?source=${formData.source}&destination=${formData.destination}`
         );
         if (!outboundResponse.ok) {
           throw new Error("Error fetching outbound trains");
@@ -52,14 +52,13 @@ const RoundTrain = () => {
         const outboundData = await outboundResponse.json();
         setOutboundTrip(outboundData);
         const returnResponse = await fetch(
-          `http://localhost:5000/api/train/search?source=${formData.destination}&destination=${formData.source}`
+          `${apiUrl}/api/train/search?source=${formData.destination}&destination=${formData.source}`
         );
         if (!returnResponse.ok) {
           throw new Error("Error fetching return trains");
         }
         const returnData = await returnResponse.json();
         setReturnTrip(returnData);
-
         const initialOutboundSeats = {};
         outboundData.forEach((train, trainIndex) => {
           train.coaches.forEach((coach, coachIndex) => {
@@ -67,7 +66,6 @@ const RoundTrain = () => {
           });
         });
         setSelectedOutboundSeats(initialOutboundSeats);
-
         const initialReturnSeats = {};
         returnData.forEach((train, trainIndex) => {
           train.coaches.forEach((coach, coachIndex) => {
@@ -80,8 +78,7 @@ const RoundTrain = () => {
       }
     };
     fetchTrainData();
-  }, [formData.source, formData.destination]);
-
+  }, [formData.source, formData.destination,apiUrl]);
   const handleSeatChange = (
     trainIndex,
     coachIndex,
@@ -96,40 +93,31 @@ const RoundTrain = () => {
     const setSelectedSeats = isReturn
       ? setSelectedReturnSeats
       : setSelectedOutboundSeats;
-
     const availableSeats = isReturn
       ? returnTrip[trainIndex].coaches[coachIndex].noOfSeatsAvailable
       : outboundTrip[trainIndex].coaches[coachIndex].noOfSeatsAvailable;
-
-    // Ensure the new seat count does not exceed the available seats or go below 0
     setSelectedSeats((prevState) => {
       const currentSelectedSeats = prevState[coachKey] || 0;
       const newSeatsSelected = Math.max(
         0,
         Math.min(currentSelectedSeats + increment, availableSeats)
       );
-
-      // Update total fare only if the seat count changes
       const seatDifference = newSeatsSelected - currentSelectedSeats;
       if (seatDifference !== 0) {
         const fareChange = seatDifference * coachFare;
         setTotalFare((prevFare) => prevFare + fareChange);
       }
-
       return {
         ...prevState,
         [coachKey]: newSeatsSelected,
       };
     });
   };
-
   const handleAccordionChange = (isReturn, trainIndex) => {
     if (isReturn) {
-      // Reset selections when switching accordions
       setSelectedReturnSeats({});
       setExpandedReturn(expandedReturn === trainIndex ? null : trainIndex);
     } else {
-      // Reset selections when switching accordions
       setSelectedOutboundSeats({});
       setExpandedOutbound(expandedOutbound === trainIndex ? null : trainIndex);
     }
@@ -142,8 +130,6 @@ const RoundTrain = () => {
       return total;
     }, 0);
   };
-
-  // Handle reservations
   const handleReserve = () => {
     if (!user) {
       setSnackbarError("Please log in to reserve tickets.");
@@ -152,7 +138,6 @@ const RoundTrain = () => {
     }
     const outboundDetails = reservationDetails ? reservationDetails : [];
     const returnDetails = [];
-
     outboundTrip.forEach((train, trainIndex) => {
       train.coaches.forEach((coach, coachIndex) => {
         const reservedSeats =
@@ -167,7 +152,6 @@ const RoundTrain = () => {
         }
       });
     });
-
     returnTrip.forEach((train, trainIndex) => {
       train.coaches.forEach((coach, coachIndex) => {
         const reservedSeats =
@@ -182,32 +166,26 @@ const RoundTrain = () => {
         }
       });
     });
-
     if (outboundDetails.length === 0 && returnDetails.length === 0) {
       setError("Please select at least one seat before reserving.");
       return;
     }
-
     setReservationDetails({ outboundDetails, returnDetails });
     setModalOpen(true);
   };
-
   const confirmReservation = async () => {
     if (!reservationDetails) {
       setError("No seats to reserve.");
       return;
     }
-
     const { outboundDetails, returnDetails } = reservationDetails;
-
     try {
       if (outboundDetails.length > 0) {
-        await updateTrainSeats(outboundDetails, false); // false for outbound
+        await updateTrainSeats(outboundDetails, false);
       }
       if (returnDetails.length > 0) {
-        await updateTrainSeats(returnDetails, true); // true for return
+        await updateTrainSeats(returnDetails, true);
       }
-
       setSnackbarOpen(true);
       resetSelectedSeats();
       setModalOpen(false);
@@ -216,11 +194,8 @@ const RoundTrain = () => {
       setError(error.message);
     }
   };
-
-  // Modify the updateTrainSeats function to accept isReturn
   const updateTrainSeats = async (details, isReturn) => {
     const trains = isReturn ? returnTrip : outboundTrip;
-
     for (const detail of details) {
       const trainIndex = trains.findIndex((train) =>
         train.coaches.some((coach) => coach.coachName === detail.coachName)
@@ -231,27 +206,21 @@ const RoundTrain = () => {
       const reservedSeats = isReturn
         ? selectedReturnSeats[`${trainIndex}-${coachIndex}`] || 0
         : selectedOutboundSeats[`${trainIndex}-${coachIndex}`] || 0;
-
-      const response = await fetch(
-        `http://localhost:5000/api/train/update-train-seats`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            trainId: trains[trainIndex]._id,
-            updatedCoaches: [{ coachName: detail.coachName, reservedSeats }],
-          }),
-        }
-      );
-
+      const response = await fetch(`${apiUrl}/api/train/update-train-seats`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          trainId: trains[trainIndex]._id,
+          updatedCoaches: [{ coachName: detail.coachName, reservedSeats }],
+        }),
+      });
       if (!response.ok) {
         throw new Error("Error reserving seats");
       }
     }
   };
-
   const areAllTripsSelected = () => {
     const outboundSelected = Object.values(selectedOutboundSeats).some(
       (seatCount) => seatCount > 0
@@ -261,13 +230,11 @@ const RoundTrain = () => {
     );
     return outboundSelected && returnSelected;
   };
-
   const resetSelectedSeats = () => {
     setSelectedOutboundSeats({});
     setSelectedReturnSeats({});
     setTotalFare(0);
   };
-
   const downloadReservationDetails = () => {
     if (!reservationDetails) return;
     const data = {
@@ -287,14 +254,12 @@ const RoundTrain = () => {
     URL.revokeObjectURL(url);
     setReservationConfirmed(false);
   };
-
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") {
       return;
     }
     setSnackbarOpen(false);
   };
-
   const renderTrip = (trip, isReturn) => {
     const expandedAccordion = isReturn ? expandedReturn : expandedOutbound;
     return trip.map((train, trainIndex) => (
@@ -322,11 +287,11 @@ const RoundTrain = () => {
         <AccordionDetails>
           <Box
             sx={{
-              border: "1px solid lightgray", // Set border color
-              borderRadius: "4px", // Rounded corners
-              padding: 2, // Padding inside the box
-              mb: 2, // Margin bottom for spacing
-              backgroundColor: "#f9f9f9", // Light background color
+              border: "1px solid lightgray",
+              borderRadius: "4px",
+              padding: 2,
+              mb: 2,
+              backgroundColor: "#f9f9f9",
             }}
           >
             <Typography variant="h6" sx={{ color: "blue", fontWeight: "bold" }}>
@@ -357,15 +322,15 @@ const RoundTrain = () => {
                     <Grid item xs={12} sm={6} md={2} key={coachIndex}>
                       <Box
                         sx={{
-                          backgroundColor: "#f0f4ff", // Light blue background for the box
+                          backgroundColor: "#f0f4ff",
                           border: "1px solid #ccc",
                           borderRadius: "8px",
                           padding: "16px",
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "space-between",
-                          height: "150px", // Set a fixed height to ensure responsiveness
-                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Slight box shadow for better elevation
+                          height: "150px",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
                         }}
                       >
                         <Typography variant="h6">{coach.coachName}</Typography>
@@ -375,17 +340,16 @@ const RoundTrain = () => {
                         <Typography variant="body2">
                           Fare: ${coach.fare}
                         </Typography>
-
                         <Box
                           sx={{
                             display: "flex",
                             justifyContent: "space-around",
-                            alignItems: "center", // Aligns items in a straight line vertically
+                            alignItems: "center",
                             mt: 2,
                             border: "1px solid #ddd",
                             padding: "4px",
                             borderRadius: "8px",
-                            backgroundColor: "#fff", // Light background for the buttons area
+                            backgroundColor: "#fff",
                           }}
                         >
                           <Button
@@ -447,7 +411,6 @@ const RoundTrain = () => {
       </Accordion>
     ));
   };
-
   return (
     <Box>
       <Typography variant="h4" align="center" gutterBottom>
@@ -462,7 +425,6 @@ const RoundTrain = () => {
         Return Trip
       </Typography>
       {renderTrip(returnTrip, true)}
-
       {!reservationConfirmed ? (
         <Button
           variant="contained"
@@ -476,7 +438,6 @@ const RoundTrain = () => {
           Download Reservation Details
         </Button>
       )}
-
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)}>
         <DialogTitle>Confirm Reservation</DialogTitle>
         <DialogContent>
@@ -493,7 +454,6 @@ const RoundTrain = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
@@ -504,7 +464,6 @@ const RoundTrain = () => {
           Reservation successful!
         </Alert>
       </Snackbar>
-
       {error && (
         <Snackbar
           open={!!error}
@@ -517,7 +476,6 @@ const RoundTrain = () => {
           </Alert>
         </Snackbar>
       )}
-
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}

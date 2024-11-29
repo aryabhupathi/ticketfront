@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -7,15 +8,16 @@ import {
   AccordionDetails,
   Button,
 } from "@mui/material";
-import Grid from '@mui/material/Grid2'
+import Grid from "@mui/material/Grid2";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RoundTicketStepper from "./RoundTicketStepper";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../authContext";
 const RoundFlight = () => {
   const location = useLocation();
-  const {user} = useAuth()
+  const { user } = useAuth();
   const { formData } = location.state;
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [selectedFlight, setSelectedFlight] = useState({
     outbound: null,
     return: null,
@@ -48,10 +50,10 @@ const RoundFlight = () => {
       try {
         const [outboundRes, returnRes] = await Promise.all([
           fetch(
-            `http://localhost:5000/api/flight/search?source=${formData.source}&destination=${formData.destination}`
+            `${apiUrl}/api/flight/search?source=${formData.source}&destination=${formData.destination}`
           ),
           fetch(
-            `http://localhost:5000/api/flight/search?source=${formData.destination}&destination=${formData.source}`
+            `${apiUrl}/api/flight/search?source=${formData.destination}&destination=${formData.source}`
           ),
         ]);
         if (!outboundRes.ok || !returnRes.ok) {
@@ -68,11 +70,11 @@ const RoundFlight = () => {
       }
     };
     fetchFlightData();
-  }, [formData.source, formData.destination]);
+  }, [formData.source, formData.destination, apiUrl]);
   const fetchBookedSeats = async (flightId, tripType) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/flight/bookedSeats?flightId=${flightId}`
+        `${apiUrl}/api/flight/bookedSeats?flightId=${flightId}`
       );
       if (!response.ok) {
         throw new Error(`Error fetching ${tripType} booked seats`);
@@ -88,7 +90,6 @@ const RoundFlight = () => {
     }
   };
   const handleFlightSelect = async (flight, tripType) => {
-    console.log(`Flight selected for ${tripType}:`, flight);
     setSelectedFlight((prevState) => ({
       ...prevState,
       [tripType]: flight,
@@ -108,32 +109,26 @@ const RoundFlight = () => {
     tripType === "outbound"
       ? setIsOutboundFinished(true)
       : setIsReturnFinished(true);
-    console.log(isOutboundFinished, isReturnFinished, "ioirioirioirioirioir");
   };
   const handleSeatsChange = (seats, tripType) => {
-    console.log(`Seats updated for ${tripType}:`, seats);
     setSelectedSeats((prevSeats) => ({
       ...prevSeats,
       [`${tripType}Seats`]: seats,
     }));
   };
   const confirmBooking = async () => {
-    if(!user){console.log('oooooooooo');
-      return
-    }
-    else{
-    const outboundFlightId = selectedFlight.outbound?._id;
-    const returnFlightId = selectedFlight.return?._id;
-    if (!outboundFlightId || !returnFlightId) {
-      console.error("Missing required booking data.");
+    if (!user) {
       return;
-    }
-    const combinedFare = totalFare.outbound + totalFare.return;
-    console.log("Total Fare for Both Trips Combined:", combinedFare);
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/flight/roundbookings",
-        {
+    } else {
+      const outboundFlightId = selectedFlight.outbound?._id;
+      const returnFlightId = selectedFlight.return?._id;
+      if (!outboundFlightId || !returnFlightId) {
+        console.error("Missing required booking data.");
+        return;
+      }
+      const combinedFare = totalFare.outbound + totalFare.return;
+      try {
+        const response = await fetch(`${apiUrl}/api/flight/roundbookings`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -146,21 +141,19 @@ const RoundFlight = () => {
             totalFare: combinedFare,
             additionalSelections: {},
           }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setOutboundBookedSeats(data.outboundFlight.bookedSeats);
+          setReturnBookedSeats(data.returnFlight.bookedSeats);
+        } else {
+          const errorData = await response.json();
+          console.error("Booking error:", errorData.message);
         }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Booking confirmed:", data);
-        setOutboundBookedSeats(data.outboundFlight.bookedSeats);
-        setReturnBookedSeats(data.returnFlight.bookedSeats);
-      } else {
-        const errorData = await response.json();
-        console.error("Booking error:", errorData.message);
+      } catch (error) {
+        console.error("Error confirming booking:", error);
       }
-    } catch (error) {
-      console.error("Error confirming booking:", error);
     }
-  }
   };
   const renderFlights = (trips, tripType) => {
     const expandedState =
@@ -187,32 +180,39 @@ const RoundFlight = () => {
               <Grid item xs={12} md={4}>
                 <Typography
                   variant="h6"
-                  sx={{ color: "blue", fontWeight: "bold", textAlign: { xs: "left", md: "center" } }}
+                  sx={{
+                    color: "blue",
+                    fontWeight: "bold",
+                    textAlign: { xs: "left", md: "center" },
+                  }}
                 >
                   {flight.flightName}
                 </Typography>
               </Grid>
-  
               <Grid item xs={12} md={4}>
                 <Typography
                   variant="body1"
-                  sx={{ color: "green", textAlign: { xs: "left", md: "center" } }}
+                  sx={{
+                    color: "green",
+                    textAlign: { xs: "left", md: "center" },
+                  }}
                 >
                   Route: {flight.source} to {flight.destination}
                 </Typography>
               </Grid>
-  
               <Grid item xs={12} md={4}>
                 <Typography
                   variant="body1"
-                  sx={{ color: "orange", textAlign: { xs: "left", md: "center" } }}
+                  sx={{
+                    color: "orange",
+                    textAlign: { xs: "left", md: "center" },
+                  }}
                 >
                   Fare per seat: ${flight.baseFare}
                 </Typography>
               </Grid>
             </Grid>
           </AccordionSummary>
-  
           <AccordionDetails>
             <RoundTicketStepper
               selectedFlight={flight}
@@ -239,7 +239,6 @@ const RoundFlight = () => {
       </Typography>
     );
   };
-  
   return (
     <Grid>
       <Box
