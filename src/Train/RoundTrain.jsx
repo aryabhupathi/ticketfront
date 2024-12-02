@@ -14,13 +14,18 @@ import {
   DialogActions,
   Snackbar,
   Alert,
-  DialogContentText,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useAuth } from "../authContext";
+import DoubleArrowTwoToneIcon from "@mui/icons-material/DoubleArrowTwoTone";
+import ExpandCircleDownTwoToneIcon from "@mui/icons-material/ExpandCircleDownTwoTone";
+import CurrencyRupeeTwoToneIcon from "@mui/icons-material/CurrencyRupeeTwoTone";
+import { PiSeatDuotone } from "react-icons/pi";
+import AcUnitTwoToneIcon from "@mui/icons-material/AcUnitTwoTone";
+import AirlineSeatLegroomReducedTwoToneIcon from "@mui/icons-material/AirlineSeatLegroomReducedTwoTone";
+import AirlineSeatIndividualSuiteRoundedIcon from "@mui/icons-material/AirlineSeatIndividualSuiteRounded";
 const RoundTrain = () => {
   const location = useLocation();
   const { user } = useAuth();
@@ -39,7 +44,7 @@ const RoundTrain = () => {
   const [expandedOutbound, setExpandedOutbound] = useState(null);
   const [expandedReturn, setExpandedReturn] = useState(null);
   const [snackbarError, setSnackbarError] = useState("");
-  const [reserveAlert, setReserveAlert] = useState(false);
+  console.log(reservationDetails, "ppppp");
   useEffect(() => {
     const fetchTrainData = async () => {
       try {
@@ -78,7 +83,44 @@ const RoundTrain = () => {
       }
     };
     fetchTrainData();
-  }, [formData.source, formData.destination,apiUrl]);
+  }, [formData.source, formData.destination, apiUrl]);
+  const getCoachIcons = (coachName) => {
+    switch (coachName.toLowerCase()) {
+      case "sleeper":
+        return (
+          <AirlineSeatIndividualSuiteRoundedIcon
+            fontSize="small"
+            sx={{ color: "#00b0ff" }}
+          />
+        );
+      case "ac tier 2":
+        return (
+          <>
+            <PiSeatDuotone style={{ fontSize: "small", color: "#00b0ff" }} />
+            <PiSeatDuotone style={{ fontSize: "small", color: "#00b0ff" }} />
+            <AcUnitTwoToneIcon fontSize={"small"} sx={{ color: "#00b0ff" }} />
+          </>
+        );
+      case "ac tier 3":
+        return (
+          <>
+            <PiSeatDuotone style={{ fontSize: "small", color: "#00b0ff" }} />
+            <PiSeatDuotone style={{ fontSize: "small", color: "#00b0ff" }} />
+            <PiSeatDuotone style={{ fontSize: "small", color: "#00b0ff" }} />
+            <AcUnitTwoToneIcon fontSize={"small"} sx={{ color: "#00b0ff" }} />
+          </>
+        );
+      case "general":
+        return (
+          <AirlineSeatLegroomReducedTwoToneIcon
+            fontSize={"small"}
+            sx={{ color: "#00b0ff" }}
+          />
+        );
+      default:
+        return null;
+    }
+  };
   const handleSeatChange = (
     trainIndex,
     coachIndex,
@@ -122,21 +164,13 @@ const RoundTrain = () => {
       setExpandedOutbound(expandedOutbound === trainIndex ? null : trainIndex);
     }
   };
-  const totalSeatsSelectedForTrip = (trip, selectedSeats, tripIndex) => {
-    return Object.keys(selectedSeats).reduce((total, key) => {
-      if (key.startsWith(`${tripIndex}-`)) {
-        total += selectedSeats[key];
-      }
-      return total;
-    }, 0);
-  };
   const handleReserve = () => {
     if (!user) {
       setSnackbarError("Please log in to reserve tickets.");
       setSnackbarOpen(true);
       return;
     }
-    const outboundDetails = reservationDetails ? reservationDetails : [];
+    const outboundDetails = [];
     const returnDetails = [];
     outboundTrip.forEach((train, trainIndex) => {
       train.coaches.forEach((coach, coachIndex) => {
@@ -144,6 +178,11 @@ const RoundTrain = () => {
           selectedOutboundSeats[`${trainIndex}-${coachIndex}`] || 0;
         if (reservedSeats > 0) {
           outboundDetails.push({
+            trainName: train.trainName,
+            source: train.source,
+            destination: train.destination,
+            startTime: train.startTime,
+            endTime: train.endTime,
             coachName: coach.coachName,
             reservedSeats: reservedSeats,
             fare: coach.fare,
@@ -158,6 +197,11 @@ const RoundTrain = () => {
           selectedReturnSeats[`${trainIndex}-${coachIndex}`] || 0;
         if (reservedSeats > 0) {
           returnDetails.push({
+            trainName: train.trainName,
+            source: train.source,
+            destination: train.destination,
+            startTime: train.startTime,
+            endTime: train.endTime,
             coachName: coach.coachName,
             reservedSeats: reservedSeats,
             fare: coach.fare,
@@ -269,142 +313,243 @@ const RoundTrain = () => {
         expanded={expandedAccordion === trainIndex}
         onChange={() => handleAccordionChange(isReturn, trainIndex)}
       >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls={`panel${trainIndex}-content`}
-          id={`panel${trainIndex}-header`}
-        >
-          <Typography variant="h6" sx={{ color: "blue", fontWeight: "bold" }}>
-            {train.trainName}
-          </Typography>
-          <Typography
-            variant="h6"
-            sx={{ color: "green", fontWeight: "light", fontStyle: "italic" }}
+        <AccordionSummary expandIcon={<ExpandCircleDownTwoToneIcon />}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: "center",
+              width: "100%",
+              gap: 2,
+              ml: 5,
+            }}
           >
-            ({train.startTime} - {train.endTime})
-          </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#2196f3",
+                fontWeight: "bold",
+                textAlign: "center",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              {train.trainName}
+            </Typography>
+            <span style={{ color: "red", marginLeft: "8px" }}>
+              <DoubleArrowTwoToneIcon fontSize="small" />
+            </span>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#76ff03",
+                textAlign: "center",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              {train.source} -- {train.destination}
+            </Typography>
+            <span
+              style={{
+                color: "red",
+                marginLeft: "8px",
+                fontWeight: "bold",
+              }}
+            >
+              <DoubleArrowTwoToneIcon fontSize="small" />
+            </span>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "orange",
+                textAlign: "center",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.5,
+              }}
+            >
+              Duration : {""}
+              {train.startTime} -- {train.endTime}
+            </Typography>
+          </Box>
         </AccordionSummary>
         <AccordionDetails>
           <Box
             sx={{
-              border: "1px solid lightgray",
+              border: "1px solid light#bdbdbd",
               borderRadius: "4px",
               padding: 2,
               mb: 2,
               backgroundColor: "#f9f9f9",
             }}
           >
-            <Typography variant="h6" sx={{ color: "blue", fontWeight: "bold" }}>
-              {train.source} to {train.destination}
-            </Typography>
-            <Box sx={{ width: "100%", mb: 2 }}>
-              <Typography variant="body1" sx={{ color: "red" }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Typography variant="body2" sx={{ color: "#2196f3", mr: 1 }}>
                 Start Time: {train.startTime}
               </Typography>
-              <Typography variant="body1" sx={{ color: "green" }}>
-                End Time: {train.endTime}
-              </Typography>
-              <Typography variant="body1" sx={{ color: "orange" }}>
-                Stops: {train.stops.join(", ")}
+              <Typography variant="body2" sx={{ color: "#2196f3" }}>
+                | End Time: {train.endTime}{" "}
               </Typography>
             </Box>
-            <Grid
-              sx={{
-                backgroundColor: "#f8f8f8",
-                padding: "16px",
-                borderRadius: "5px",
-              }}
-            >
-              <Grid container spacing={3}>
-                {train.coaches.map((coach, coachIndex) => {
-                  const coachKey = `${trainIndex}-${coachIndex}`;
-                  return (
-                    <Grid item xs={12} sm={6} md={2} key={coachIndex}>
+            <Typography variant="body2" sx={{ color: "#76ff03", mt: 1 }}>
+              Stops: {train.stops.join(", ")}
+            </Typography>
+            <Grid container spacing={2} mt={2}>
+              {train.coaches.map((coach, coachIndex) => {
+                const coachKey = `${trainIndex}-${coachIndex}`;
+                return (
+                  <Grid
+                    item
+                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    key={coachIndex}
+                  >
+                    <Box
+                      sx={{
+                        background: "linear-gradient(135deg, #d9f2ff, #f0f4ff)",
+                        padding: { xs: 2, sm: 3 },
+                        borderRadius: "12px",
+                        height: "75%",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                        border: "1px solid #ccc",
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                          boxShadow: "0 6px 16px rgba(0, 0, 0, 0.15)",
+                        },
+                      }}
+                    >
                       <Box
                         sx={{
-                          backgroundColor: "#f0f4ff",
-                          border: "1px solid #ccc",
-                          borderRadius: "8px",
-                          padding: "16px",
                           display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          height: "150px",
-                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 1,
                         }}
                       >
-                        <Typography variant="h6">{coach.coachName}</Typography>
-                        <Typography variant="body2">
-                          Seats Available: {coach.noOfSeatsAvailable}
-                        </Typography>
-                        <Typography variant="body2">
-                          Fare: ${coach.fare}
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontSize: { xs: "1rem", sm: "1.2rem" },
+                            fontWeight: 600,
+                            color: "#00509e",
+                          }}
+                        >
+                          {coach.coachName}
                         </Typography>
                         <Box
                           sx={{
                             display: "flex",
-                            justifyContent: "space-around",
+                            gap: 0.5,
                             alignItems: "center",
-                            mt: 2,
-                            border: "1px solid #ddd",
-                            padding: "4px",
-                            borderRadius: "8px",
-                            backgroundColor: "#fff",
                           }}
                         >
-                          <Button
-                            variant="outlined"
-                            onClick={() =>
-                              handleSeatChange(
-                                trainIndex,
-                                coachIndex,
-                                coach.fare,
-                                -1,
-                                isReturn
-                              )
-                            }
-                            disabled={
-                              (isReturn
-                                ? selectedReturnSeats[coachKey]
-                                : selectedOutboundSeats[coachKey]) === 0
-                            }
-                          >
-                            <RemoveIcon fontSize="small" />
-                          </Button>
-                          <Typography
-                            variant="body1"
-                            sx={{ display: "inline", mx: 1 }}
-                          >
-                            {isReturn
-                              ? selectedReturnSeats[coachKey] || 0
-                              : selectedOutboundSeats[coachKey] || 0}
-                          </Typography>
-                          <Button
-                            variant="outlined"
-                            onClick={() =>
-                              handleSeatChange(
-                                trainIndex,
-                                coachIndex,
-                                coach.fare,
-                                1,
-                                isReturn
-                              )
-                            }
-                            disabled={
-                              (isReturn
-                                ? selectedReturnSeats[coachKey] || 0
-                                : selectedOutboundSeats[coachKey] || 0) >=
-                              coach.noOfSeatsAvailable
-                            }
-                          >
-                            <AddIcon fontSize="small" />
-                          </Button>
+                          {getCoachIcons(coach.coachName)}
                         </Box>
                       </Box>
-                    </Grid>
-                  );
-                })}
-              </Grid>
+                      <Typography variant="body2">
+                        Seats Available: {coach.noOfSeatsAvailable}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontSize: { xs: "0.85rem", sm: "1rem" },
+                          fontWeight: 500,
+                          color: "#333",
+                          mt: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                        }}
+                      >
+                        Fare:{" "}
+                        <CurrencyRupeeTwoToneIcon
+                          fontSize="small"
+                          sx={{ marginLeft: "4px" }}
+                        />{" "}
+                        {coach.fare}
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 2,
+                          mt: 2,
+                        }}
+                      >
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() =>
+                            handleSeatChange(
+                              trainIndex,
+                              coachIndex,
+                              coach.fare,
+                              -1,
+                              isReturn
+                            )
+                          }
+                          disabled={
+                            (isReturn
+                              ? selectedReturnSeats[coachKey]
+                              : selectedOutboundSeats[coachKey]) === 0
+                          }
+                          sx={{
+                            minWidth: "40px",
+                            borderRadius: "50%",
+                            border: "1px solid #f44336",
+                          }}
+                        >
+                          <RemoveIcon fontSize="small" />
+                        </Button>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            color: "#00509e",
+                          }}
+                        >
+                          {isReturn
+                            ? selectedReturnSeats[coachKey] || 0
+                            : selectedOutboundSeats[coachKey] || 0}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() =>
+                            handleSeatChange(
+                              trainIndex,
+                              coachIndex,
+                              coach.fare,
+                              1,
+                              isReturn
+                            )
+                          }
+                          disabled={
+                            (isReturn
+                              ? selectedReturnSeats[coachKey] || 0
+                              : selectedOutboundSeats[coachKey] || 0) >=
+                            coach.noOfSeatsAvailable
+                          }
+                          sx={{
+                            minWidth: "40px",
+                            borderRadius: "50%",
+                            color: "#00e676",
+                            border: "1px solid #00e676",
+                          }}
+                        >
+                          <AddIcon fontSize="small" />
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Grid>
+                );
+              })}
             </Grid>
           </Box>
         </AccordionDetails>
@@ -413,9 +558,27 @@ const RoundTrain = () => {
   };
   return (
     <Box>
-      <Typography variant="h4" align="center" gutterBottom>
-        Round Train Booking
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          mt: 2,
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            background: "linear-gradient(to right, black, red, black)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
+          Available Buses from {formData.source} to {formData.destination}
+        </Typography>
+      </Box>
       {error && <Alert severity="error">{error}</Alert>}
       <Typography variant="h5" gutterBottom>
         Outbound Trip
@@ -438,18 +601,116 @@ const RoundTrain = () => {
           Download Reservation Details
         </Button>
       )}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)}>
-        <DialogTitle>Confirm Reservation</DialogTitle>
+      <Dialog
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "12px",
+            padding: "16px",
+            background: "linear-gradient(135deg, #fefefe, #f5f5f5)",
+            boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.2)",
+            maxWidth: "600px",
+            border: "2px dashed #00509e",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: "1.5rem",
+            color: "#00509e",
+            borderBottom: "1px solid #ddd",
+            paddingBottom: "8px",
+            mb: 2,
+          }}
+        >
+          Confirm Ticket
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to reserve the selected seats?
-          </DialogContentText>
+          {reservationDetails &&
+            reservationDetails.outboundDetails?.length > 0 && (
+              <>
+                <Typography
+                  variant="h6"
+                  sx={{ textAlign: "center", fontWeight: "600", mb: 1 }}
+                >
+                  Outbound Trip
+                </Typography>
+                {reservationDetails.outboundDetails.map((trip, index) => (
+                  <Box
+                    key={index}
+                    sx={{ padding: "8px 0", borderBottom: "1px solid #eee" }}
+                  >
+                    <Typography sx={{ fontWeight: "bold", color: "#333" }}>
+                      Train: {trip.trainName} ({trip.source} →{" "}
+                      {trip.destination})
+                    </Typography>
+                    <Typography sx={{ color: "#666" }}>
+                      Departure: {trip.startTime} | Arrival: {trip.endTime}
+                    </Typography>
+                    <Typography sx={{ color: "#333" }}>
+                      Coach: {trip.coachName}, Seats: {trip.reservedSeats},
+                      Total Fare: ₹{trip.total}
+                    </Typography>
+                  </Box>
+                ))}
+              </>
+            )}
+          {reservationDetails &&
+            reservationDetails.returnDetails?.length > 0 && (
+              <>
+                <Typography
+                  variant="h6"
+                  sx={{ textAlign: "center", fontWeight: "600", mb: 1 }}
+                >
+                  Return Trip
+                </Typography>
+                {reservationDetails.returnDetails.map((trip, index) => (
+                  <Box
+                    key={index}
+                    sx={{ padding: "8px 0", borderBottom: "1px solid #eee" }}
+                  >
+                    <Typography sx={{ fontWeight: "bold", color: "#333" }}>
+                      Train: {trip.trainName} ({trip.source} →{" "}
+                      {trip.destination})
+                    </Typography>
+                    <Typography sx={{ color: "#666" }}>
+                      Departure: {trip.startTime} | Arrival: {trip.endTime}
+                    </Typography>
+                    <Typography sx={{ color: "#333" }}>
+                      Coach: {trip.coachName}, Seats: {trip.reservedSeats},
+                      Total Fare: ₹{trip.total}
+                    </Typography>
+                  </Box>
+                ))}
+              </>
+            )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setModalOpen(false)} color="primary">
+        <DialogActions sx={{ justifyContent: "center", mt: 2 }}>
+          <Button
+            onClick={() => setModalOpen(false)}
+            sx={{
+              backgroundColor: "#f44336",
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: "#d32f2f",
+              },
+            }}
+          >
             Cancel
           </Button>
-          <Button onClick={confirmReservation} color="primary">
+          <Button
+            onClick={confirmReservation}
+            sx={{
+              backgroundColor: "#4caf50",
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: "#388e3c",
+              },
+            }}
+          >
             Confirm
           </Button>
         </DialogActions>

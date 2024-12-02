@@ -135,7 +135,7 @@ const SingleFlight = () => {
     <Box
       sx={{
         padding: 2,
-        backgroundImage: "url(../../flight.webp)",
+        backgroundImage: "url(../../flight12.webp)",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
