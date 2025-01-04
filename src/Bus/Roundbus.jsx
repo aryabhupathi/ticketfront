@@ -4,36 +4,82 @@ import {
   Box,
   Button,
   Typography,
-  Accordion,
   AccordionSummary,
   AccordionDetails,
   Modal,
   Snackbar,
   Alert,
+  FormControl,
+  InputLabel,
+  Slider,
+  MenuItem,
+  Select,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
-import jsPDF from "jspdf";
+import {
+  FilterSection,
+  FilterButton,
+  FilterTitle,
+  NewAccordion,
+  SummaryBox,
+  BusName,
+  IconGap,
+  BusRoute,
+  BusFare,
+  BusTime,
+  BusStop,
+  BusSeat,
+  AvailableText,
+  AvailableBox,
+  ReservedBox,
+  ReservedText,
+  SelectedBox,
+  SelectedText,
+  LegendGroup,
+  LegendBox,
+  FareTotal,
+  DetailBox,
+  BookBox,
+  ErrorText,
+  ConfirmBox,
+  ConfirmHead,
+  ConfirmHeadRound,
+  ConfirmBoxRound,
+  ConfirmButtons,
+  LegendButton,
+  MainAccordion,
+} from "./BusStyle";
 import "jspdf-autotable";
+import jsPDF from "jspdf";
+import Grid from "@mui/material/Grid2";
 import { useAuth } from "../authContext";
-import { useLocation } from "react-router-dom";
-import AirlineSeatReclineExtraSharpIcon from "@mui/icons-material/AirlineSeatReclineExtraSharp";
-import DoubleArrowTwoToneIcon from "@mui/icons-material/DoubleArrowTwoTone";
-import ExpandCircleDownTwoToneIcon from "@mui/icons-material/ExpandCircleDownTwoTone";
-import CurrencyRupeeTwoToneIcon from "@mui/icons-material/CurrencyRupeeTwoTone";
 import { useMediaQuery } from "@mui/material";
+import { useLocation } from "react-router-dom";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import DoubleArrowTwoToneIcon from "@mui/icons-material/DoubleArrowTwoTone";
+import CurrencyRupeeTwoToneIcon from "@mui/icons-material/CurrencyRupeeTwoTone";
+import ExpandCircleDownTwoToneIcon from "@mui/icons-material/ExpandCircleDownTwoTone";
+import AirlineSeatReclineExtraSharpIcon from "@mui/icons-material/AirlineSeatReclineExtraSharp";
 const RoundBus = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { formData } = location.state;
   const apiUrl = process.env.REACT_APP_API_URL;
   const isSmallScreen = useMediaQuery("(max-width:1100px)");
+  const [error, setError] = useState(null);
+  const [legend, setLegend] = useState(false);
+  const [returnTrip, setReturnTrip] = useState([]);
+  const [loginAlert, setLoginAlert] = useState(false);
+  const [outboundTrip, setOutboundTrip] = useState([]);
+  const [showMessage, setShowMessage] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentTripType, setCurrentTripType] = useState("");
+  const [fare, setFare] = useState({ outbound: 0, return: 0 });
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [selectedTripType, setSelectedTripType] = useState("outbound");
   const [selectedSeats, setSelectedSeats] = useState({
     outbound: {},
     return: {},
   });
-  const [loginAlert, setLoginAlert] = useState(false);
-  const [fare, setFare] = useState({ outbound: 0, return: 0 });
-  const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [selectedBus, setSelectedBus] = useState({
     outbound: null,
     return: null,
@@ -42,16 +88,18 @@ const RoundBus = () => {
     outbound: false,
     return: false,
   });
-  const [showMessage, setShowMessage] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState({
     outbound: false,
     return: false,
   });
-  const [currentTripType, setCurrentTripType] = useState("");
-  const [outboundTrip, setOutboundTrip] = useState([]);
-  const [returnTrip, setReturnTrip] = useState([]);
-  const [error, setError] = useState(null);
-  const handleClose = () => setShowMessage(false);
+  const [filters, setFilters] = useState({
+    outbound: { selectedStops: [], fareRange: [0, 5000] },
+    return: { selectedStops: [], fareRange: [0, 5000] },
+  });
+  const [filteredTrips, setFilteredTrips] = useState({
+    outbound: [],
+    return: [],
+  });
   useEffect(() => {
     const fetchBusData = async (source, destination, setTrip) => {
       try {
@@ -70,6 +118,38 @@ const RoundBus = () => {
     fetchBusData(formData.source, formData.destination, setOutboundTrip);
     fetchBusData(formData.destination, formData.source, setReturnTrip);
   }, [formData.source, formData.destination, apiUrl]);
+  useEffect(() => {
+    const newFilteredTrips = {
+      outbound: outboundTrip.filter(
+        (bus) =>
+          (filters.outbound.selectedStops.length === 0 ||
+            filters.outbound.selectedStops.every((stop) =>
+              bus.stops.includes(stop)
+            )) &&
+          bus.baseFare >= filters.outbound.fareRange[0] &&
+          bus.baseFare <= filters.outbound.fareRange[1]
+      ),
+      return: returnTrip.filter(
+        (bus) =>
+          (filters.return.selectedStops.length === 0 ||
+            filters.return.selectedStops.every((stop) =>
+              bus.stops.includes(stop)
+            )) &&
+          bus.baseFare >= filters.return.fareRange[0] &&
+          bus.baseFare <= filters.return.fareRange[1]
+      ),
+    };
+    setFilteredTrips(newFilteredTrips);
+  }, [filters, outboundTrip, returnTrip]);
+  const resetFilters = () => {
+    setFilters({
+      outbound: { selectedStops: [], fareRange: [0, 5000] },
+      return: { selectedStops: [], fareRange: [0, 5000] },
+    });
+  };
+  const handleLegend = () => {
+    setLegend((prev) => !prev);
+  };
   const handleSeatClick = (seat, tripType) => {
     const selectedBusForTrip = selectedBus[tripType];
     if (
@@ -105,8 +185,9 @@ const RoundBus = () => {
       0
     );
   };
-  const outboundLength = getTotalSelectedSeats("outbound");
-  const returnLength = getTotalSelectedSeats("return");
+  const toggleFilters = () => {
+    setShowFilters((prev) => !prev);
+  };
   const handleBusSelect = (bus, tripType) => {
     setSelectedBus((prev) => ({
       ...prev,
@@ -206,6 +287,7 @@ const RoundBus = () => {
     }
   };
   const handleChange = (busIndex, tripType) => {
+    setSelectedTripType(tripType);
     const isCurrentlyExpanded = expandedIndex[tripType] === busIndex;
     setExpandedIndex((prevExpandedIndex) => ({
       ...prevExpandedIndex,
@@ -244,7 +326,11 @@ const RoundBus = () => {
     doc.text("Bus Reservation Details", margin, margin);
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, margin)
+    doc.text(
+      `Date: ${new Date().toLocaleDateString()}`,
+      pageWidth - margin - 50,
+      margin
+    );
     doc.setFontSize(14);
     doc.text(`User Name: ${user.name}`, margin, margin + 20);
     doc.text(`From: ${formData.source}`, margin, margin + 30);
@@ -252,7 +338,13 @@ const RoundBus = () => {
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Outbound Trip", margin, margin + 60);
-    const outboundHeaders = ["Bus Name", "Route", "Start Time", "Seats", "Fare"];
+    const outboundHeaders = [
+      "Bus Name",
+      "Route",
+      "Start Time",
+      "Seats",
+      "Fare",
+    ];
     const outboundTableRows = Object.keys(selectedSeats.outbound || {}).reduce(
       (rows, busId) => {
         const seats = selectedSeats.outbound[busId] || [];
@@ -347,12 +439,27 @@ const RoundBus = () => {
     doc.text(footerText, margin, pageHeight - margin - 10);
     doc.save("bus-reservation-details.pdf");
   };
+  const handleStopsChange = (type, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], selectedStops: value },
+    }));
+  };
+  const handleFareChange = (type, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], fareRange: value },
+    }));
+  };
+  const handleClose = () => setShowMessage(false);
+  const outboundLength = getTotalSelectedSeats("outbound");
+  const returnLength = getTotalSelectedSeats("return");
   const renderRowsToColumns = (seatConfiguration, tripType, bus) => {
     return seatConfiguration.map((row, rowIndex) => (
       <Grid
         container
         key={rowIndex}
-        spacing={0.5}
+        spacing={1}
         justifyContent="center"
         sx={{
           marginTop: "16px",
@@ -367,9 +474,7 @@ const RoundBus = () => {
             <Grid
               item
               key={seat}
-              xs={4}
-              sm={2}
-              md={1}
+              size={{ xs: 3 }}
               sx={{
                 display: "flex",
                 justifyContent: "center",
@@ -377,38 +482,35 @@ const RoundBus = () => {
             >
               <Box
                 sx={{
-                  padding: 1,
-                  border: "1px solid",
+                  border: "1px dotted",
                   borderColor: isSelected ? "#76ff03" : "#2196f3",
                   borderRadius: "8px",
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  minHeight: "40px",
                   backgroundColor: isBooked
                     ? "#bdbdbd"
                     : isSelected
                     ? "rgba(76, 175, 80, 0.3)"
                     : "rgba(33, 150, 243, 0.3)",
+                  width: "100%",
+                  minHeight: "35px",
                 }}
               >
                 <Button
                   variant="outlined"
                   color={isSelected ? "success" : "primary"}
+                  size="small"
                   sx={{
-                    height: "40px",
-                    width: "40px",
                     borderRadius: "50%",
                     minWidth: 0,
                     background: "white",
-                    padding: 0,
-                    fontSize: "14px",
                   }}
                   onClick={() => handleSeatClick(seat, tripType)}
                   disabled={isBooked || bookingConfirmed[tripType]}
                 >
-                  <AirlineSeatReclineExtraSharpIcon sx={{ fontSize: "20px" }} />
-                  {seat}
+                  <AirlineSeatReclineExtraSharpIcon sx={{ fontSize: "10px" }} />
+                  <Typography sx={{ fontSize: "10px" }}>{seat}</Typography>
                 </Button>
               </Box>
             </Grid>
@@ -444,7 +546,6 @@ const RoundBus = () => {
             <Grid item key={seat} padding={1} sx={{ flexShrink: 0 }}>
               <Box
                 sx={{
-                  padding: 1,
                   backgroundColor: isBooked
                     ? "#bdbdbd"
                     : isSelected
@@ -459,25 +560,23 @@ const RoundBus = () => {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  minHeight: "40px",
+                  minHeight: "35px",
                 }}
               >
                 <Button
                   variant="outlined"
                   color={isSelected ? "success" : "primary"}
+                  size="small"
                   sx={{
-                    height: "40px",
-                    width: "40px",
                     borderRadius: "50%",
                     minWidth: 0,
                     background: "white",
-                    padding: 0,
                   }}
                   onClick={() => handleSeatClick(seat, tripType)}
                   disabled={isBooked || bookingConfirmed[tripType]}
                 >
-                  <AirlineSeatReclineExtraSharpIcon fontSize="small" />
-                  {seat}
+                  <AirlineSeatReclineExtraSharpIcon sx={{ fontSize: "12px" }} />
+                  <Typography sx={{ fontSize: "10px" }}>{seat}</Typography>
                 </Button>
               </Box>
             </Grid>
@@ -487,7 +586,7 @@ const RoundBus = () => {
     ));
   };
   return (
-    <Box
+    <Grid item
       sx={{
         padding: 2,
         backgroundImage: "url(../../bus.webp)",
@@ -511,531 +610,394 @@ const RoundBus = () => {
         Available Buses from {formData.source} to {formData.destination}
       </Typography>
       {formData.tripType === "round" && (
-        <>
-          <Typography variant="h5" gutterBottom>
-            Outbound Trip
-          </Typography>
-          <Box>
-            {outboundTrip.map((bus, index) => (
-              <Accordion
-                key={index}
-                expanded={expandedIndex.outbound === index}
-                onChange={() => handleChange(index, "outbound")}
-              >
-                <AccordionSummary expandIcon={<ExpandCircleDownTwoToneIcon />}>
+        <Grid container
+          display="flex"
+          sx={{
+            justifyContent:'center',
+            flexDirection: { xs: "column", sm: "row" }
+          }}
+        >
+         
+        <Grid size={{xs:12, sm:3}} sx={{padding:2}}>
+            <FilterSection>
+              <FilterTitle variant="h6" onClick={toggleFilters}>
+                <span>Filter Buses</span>
+                <FilterAltIcon
+                  sx={{ color: showFilters ? "#0288d1" : "#000" }}
+                />
+              </FilterTitle>
+              {showFilters && (
+                <>
+                  {selectedTripType === "outbound" && (
+                    <Grid container direction="column" spacing={2}>
+                      <Grid item>
+                        <Typography variant="h6" sx={{ color: "#0288d1" }}>
+                          Outbound Buses
+                        </Typography>
+                      </Grid>
+                      <Grid item>
+                        <FormControl fullWidth>
+                          <InputLabel>Stops</InputLabel>
+                          <Select
+                            multiple
+                            value={filters.outbound.selectedStops}
+                            onChange={(event) =>
+                              handleStopsChange("outbound", event.target.value)
+                            }
+                            renderValue={(selected) => selected.join(", ")}
+                          >
+                            {[
+                              ...new Set(
+                                outboundTrip.flatMap((bus) => bus.stops)
+                              ),
+                            ].map((stop) => (
+                              <MenuItem key={stop} value={stop}>
+                                {stop}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item>
+                        <Box>
+                          <Typography gutterBottom sx={{ color: "#00796b" }}>
+                            Fare (₹{filters.outbound.fareRange[0]} - ₹
+                            {filters.outbound.fareRange[1]})
+                          </Typography>
+                          <Slider
+                            value={filters.outbound.fareRange}
+                            onChange={(event, newValue) =>
+                              handleFareChange("outbound", newValue)
+                            }
+                            valueLabelDisplay="auto"
+                            min={0}
+                            max={5000}
+                            step={100}
+                            sx={{ color: "#0288d1" }}
+                          />
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  )}
+                  {selectedTripType === "return" && (
+                    <Grid container direction="column" spacing={2}>
+                      <Grid item>
+                        <Typography variant="h6" sx={{ color: "#d32f2f" }}>
+                          Return Buses
+                        </Typography>
+                      </Grid>
+                      <Grid item>
+                        <FormControl fullWidth>
+                          <InputLabel>Stops</InputLabel>
+                          <Select
+                            multiple
+                            value={filters.return.selectedStops}
+                            onChange={(event) =>
+                              handleStopsChange("return", event.target.value)
+                            }
+                            renderValue={(selected) => selected.join(", ")}
+                          >
+                            {[
+                              ...new Set(
+                                returnTrip.flatMap((bus) => bus.stops)
+                              ),
+                            ].map((stop) => (
+                              <MenuItem key={stop} value={stop}>
+                                {stop}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item>
+                        <Box>
+                          <Typography gutterBottom sx={{ color: "#d84315" }}>
+                            Fare (₹{filters.return.fareRange[0]} - ₹
+                            {filters.return.fareRange[1]})
+                          </Typography>
+                          <Slider
+                            value={filters.return.fareRange}
+                            onChange={(event, newValue) =>
+                              handleFareChange("return", newValue)
+                            }
+                            valueLabelDisplay="auto"
+                            min={0}
+                            max={5000}
+                            step={100}
+                            sx={{ color: "#d32f2f" }}
+                          />
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  )}
                   <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: "center",
-                      width: "100%",
-                      gap: 2,
-                      ml: 5,
-                    }}
+                    sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}
                   >
-                    <Typography
-                      variant="h6"
+                    <FilterButton
+                      onClick={() => resetFilters()}
                       sx={{
-                        color: "#2196f3",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
+                        backgroundColor: "#1976d2",
+                        color: "#ffffff",
+                        "&:hover": { backgroundColor: "#1565c0" },
                       }}
                     >
-                      {bus.busName}
-                    </Typography>
-                    <span style={{ color: "red", marginLeft: "8px" }}>
-                      <DoubleArrowTwoToneIcon fontSize="small" />
-                    </span>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "#76ff03",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      {bus.source} -- {bus.destination}
-                    </Typography>
-                    <span
-                      style={{
-                        color: "red",
-                        marginLeft: "8px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      <DoubleArrowTwoToneIcon fontSize="small" />
-                    </span>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "orange",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                      }}
-                    >
-                      Fare : <CurrencyRupeeTwoToneIcon fontSize="small" />
-                      {bus.baseFare}
-                    </Typography>
+                      Reset Filters
+                    </FilterButton>
                   </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Box
-                    sx={{
-                      border: "1px solid light #bdbdbd",
-                      borderRadius: "4px",
-                      padding: 2,
-                      mb: 2,
-                      backgroundColor: "#f9f9f9",
-                    }}
+                </>
+              )}
+            </FilterSection>
+          </Grid>
+         
+        <Grid size={{xs:12, sm:9}} sx={{padding:2}}>
+            <MainAccordion>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  textShadow: "1px 1px 2px rgba(0, 0, 0, 0.3)",
+                  color: "#F97316",
+                }}
+                gutterBottom
+              >
+                Outbound Trip
+              </Typography>
+              {filteredTrips.outbound.map((bus, index) => (
+                <NewAccordion
+                  key={index}
+                  expanded={expandedIndex.outbound === index}
+                  onChange={() => handleChange(index, "outbound")}
+                >
+                  <AccordionSummary
+                    expandIcon={<ExpandCircleDownTwoToneIcon />}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#2196f3", mr: 1 }}
-                      >
-                        Start Time: {bus.startTime}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#2196f3" }}>
-                        | End Time: {bus.endTime}{" "}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#76ff03", mt: 1 }}
-                    >
-                      Stops: {bus.stops.join(", ")}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "orange", mt: 1 }}>
-                      Seats Available: {bus.noOfSeatsAvailable}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      mt={2}
-                      sx={{ color: "#212121", mt: 1 }}
-                    >
-                      Selected Seats:{" "}
-                      {selectedSeats.outbound[bus.busName]?.join(", ") ||
-                        "None"}
-                    </Typography>
-                    {isSmallScreen ? (
+                    <SummaryBox>
+                      <Box
+                        component="img"
+                        src="../../image.png"
+                        alt="Bus Logo"
+                        sx={{
+                          width: "25px",
+                          height: "25px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <BusName variant="subtitle">{bus.busName}</BusName>
+                      {!isSmallScreen && (
+                        <>
+                          <IconGap>
+                            <DoubleArrowTwoToneIcon fontSize="small" />
+                          </IconGap>
+                          <BusRoute variant="body1">
+                            {bus.source} -- {bus.destination}
+                          </BusRoute>
+                          <IconGap>
+                            <DoubleArrowTwoToneIcon fontSize="small" />
+                          </IconGap>
+                          <BusFare variant="body1">
+                            Fare:{" "}
+                            <CurrencyRupeeTwoToneIcon
+                              sx={{ fontSize: "16px", color: "#F97316" }}
+                            />
+                            {bus.baseFare}
+                          </BusFare>
+                        </>
+                      )}
+                    </SummaryBox>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <DetailBox>
+                      <BusTime variant="body2">
+                        Start Time: {bus.startTime} | End Time: {bus.endTime}
+                      </BusTime>
+                      <BusStop variant="body2">
+                        Stops: {bus.stops.join(", ")}
+                      </BusStop>
+                      <BusSeat variant="body2">
+                        Seats Available: {bus.noOfSeatsAvailable}
+                      </BusSeat>
+                      <BusSeat variant="body2">
+                        Selected Seats:{" "}
+                        {selectedSeats.outbound[bus.busName]?.join(", ") ||
+                          "None"}
+                      </BusSeat>
+                      {isSmallScreen
+                        ? renderRowsToColumns(
+                            bus.layout.seatConfiguration,
+                            "outbound",
+                            bus
+                          )
+                        : renderColumnsToRows(
+                            bus.layout.seatConfiguration,
+                            "outbound",
+                            bus
+                          )}
                       <Box
                         sx={{
                           display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 2,
-                          textAlign: "center",
+                          justifyContent: "flex-end",
                         }}
                       >
-                        {renderRowsToColumns(
-                          bus.layout.seatConfiguration,
-                          "outbound",
-                          bus
-                        )}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: 2,
-                            marginTop: 2,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#2196f3",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#2196f3" }}>
-                            Available
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#bdbdbd",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#bdbdbd" }}>
-                            Reserved
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#76ff03",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#76ff03" }}>
-                            Selected
-                          </Typography>
-                        </Box>
+                        <LegendButton onClick={handleLegend}>
+                          {legend ? "Hide Legend" : "Show Legend"}
+                        </LegendButton>
                       </Box>
-                    ) : (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 2,
-                          textAlign: "center",
-                        }}
-                      >
-                        {renderColumnsToRows(
-                          bus.layout.seatConfiguration,
-                          "outbound",
-                          bus
-                        )}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: 2,
-                            marginTop: 2,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#2196f3",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#2196f3" }}>
-                            Available
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#bdbdbd",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#bdbdbd" }}>
-                            Reserved
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#76ff03",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#76ff03" }}>
-                            Selected
-                          </Typography>
-                        </Box>
-                      </Box>
-                    )}
-                    <Typography
-                      variant="h6"
-                      color="primary"
-                      mt={2}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "right",
-                        gap: 0.5,
-                      }}
-                    >
+                      {legend && (
+                        <>
+                          <LegendBox>
+                            <LegendGroup>
+                              <AvailableBox />
+                              <AvailableText>Available</AvailableText>
+                            </LegendGroup>
+                            <LegendGroup>
+                              <ReservedBox />
+                              <ReservedText>Reserved</ReservedText>
+                            </LegendGroup>
+                            <LegendGroup>
+                              <SelectedBox />
+                              <SelectedText>Selected</SelectedText>
+                            </LegendGroup>
+                          </LegendBox>
+                        </>
+                      )}
+                    </DetailBox>
+                    <FareTotal variant="h6">
                       Total Fare:
                       <CurrencyRupeeTwoToneIcon
-                        fontSize="small"
-                        sx={{ marginLeft: 0.5 }}
+                        sx={{ fontSize: "16px", color: "#F43F5E" }}
                       />
                       {fare.outbound}
-                    </Typography>
-                  </Box>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Box>
-          <Typography variant="h5" gutterBottom>
-            Return Trip
-          </Typography>
-          <Box>
-            {returnTrip.map((bus, index) => (
-              <Accordion
-                key={index}
-                expanded={expandedIndex.return === index}
-                onChange={() => handleChange(index, "return")}
-              >
-                <AccordionSummary expandIcon={<ExpandCircleDownTwoToneIcon />}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: "center",
-                      width: "100%",
-                      gap: 2,
-                      ml: 5,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: "#2196f3",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      {bus.busName}
-                    </Typography>
-                    <span style={{ color: "red", marginLeft: "8px" }}>
-                      <DoubleArrowTwoToneIcon fontSize="small" />
-                    </span>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "#76ff03",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      {bus.source} -- {bus.destination}
-                    </Typography>
-                    <span
-                      style={{
-                        color: "red",
-                        marginLeft: "8px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      <DoubleArrowTwoToneIcon fontSize="small" />
-                    </span>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "orange",
-                        textAlign: "center",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                      }}
-                    >
-                      Fare : <CurrencyRupeeTwoToneIcon fontSize="small" />
-                      {bus.baseFare}
-                    </Typography>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Box
-                    sx={{
-                      border: "1px solid light #bdbdbd",
-                      borderRadius: "4px",
-                      padding: 2,
-                      mb: 2,
-                      backgroundColor: "#f9f9f9",
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#2196f3", mr: 1 }}
-                      >
-                        Start Time: {bus.startTime}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#2196f3" }}>
-                        | End Time: {bus.endTime}{" "}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#76ff03", mt: 1 }}
-                    >
-                      Stops: {bus.stops.join(", ")}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "orange", mt: 1 }}>
-                      Seats Available: {bus.noOfSeatsAvailable}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      mt={2}
-                      sx={{ color: "#212121", mt: 1 }}
-                    >
-                      Selected Seats:{" "}
-                      {selectedSeats.outbound[bus.busName]?.join(", ") ||
-                        "None"}
-                    </Typography>
-                    {isSmallScreen ? (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 2,
-                          textAlign: "center",
-                        }}
-                      >
-                        {renderRowsToColumns(
-                          bus.layout.seatConfiguration,
-                          "return",
-                          bus
-                        )}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: 2,
-                            marginTop: 2,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#2196f3",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#2196f3" }}>
-                            Available
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#bdbdbd",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#bdbdbd" }}>
-                            Reserved
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#76ff03",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#76ff03" }}>
-                            Selected
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ) : (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 2,
-                          textAlign: "center",
-                        }}
-                      >
-                        {renderColumnsToRows(
-                          bus.layout.seatConfiguration,
-                          "return",
-                          bus
-                        )}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            gap: 2,
-                            marginTop: 2,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#2196f3",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#2196f3" }}>
-                            Available
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#bdbdbd",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#bdbdbd" }}>
-                            Reserved
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "#76ff03",
-                              borderRadius: "50%",
-                            }}
-                          />
-                          <Typography sx={{ color: "#76ff03" }}>
-                            Selected
-                          </Typography>
-                        </Box>
-                      </Box>
-                    )}
-                    <Typography
-                      variant="h6"
-                      color="primary"
-                      mt={2}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "right",
-                        gap: 0.5,
-                      }}
-                    >
-                      Total Fare:
-                      <CurrencyRupeeTwoToneIcon
-                        fontSize="small"
-                        sx={{ marginLeft: 0.5 }}
-                      />
-                      {fare.return}
-                    </Typography>
-                  </Box>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-            {outboundLength && returnLength && (
-              <Box
+                    </FareTotal>
+                  </AccordionDetails>
+                </NewAccordion>
+              ))}
+            </MainAccordion>
+            <MainAccordion>
+              <Typography
+                variant="h5"
                 sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  mt: 2,
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  textShadow: "1px 1px 2px rgba(0, 0, 0, 0.3)",
+                  color: "#F97316",
                 }}
+                gutterBottom
               >
-                {!bookingConfirmed ? (
+                Return Trips
+              </Typography>
+              {filteredTrips.return.map((bus, index) => (
+                <NewAccordion
+                  key={index}
+                  expanded={expandedIndex.return === index}
+                  onChange={() => handleChange(index, "return")}
+                >
+                  <AccordionSummary
+                    expandIcon={<ExpandCircleDownTwoToneIcon />}
+                  >
+                    <SummaryBox>
+                      <Box
+                        component="img"
+                        src="../../image.png"
+                        alt="Bus Logo"
+                        sx={{
+                          width: "25px",
+                          height: "25px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <BusName variant="subtitle">{bus.busName}</BusName>
+                      {!isSmallScreen && (
+                        <>
+                          <IconGap>
+                            <DoubleArrowTwoToneIcon fontSize="small" />
+                          </IconGap>
+                          <BusRoute variant="body1">
+                            {bus.source} -- {bus.destination}
+                          </BusRoute>
+                          <IconGap>
+                            <DoubleArrowTwoToneIcon fontSize="small" />
+                          </IconGap>
+                          <BusFare variant="body1">
+                            Fare :{" "}
+                            <CurrencyRupeeTwoToneIcon
+                              sx={{ fontSize: "16px" }}
+                            />
+                            {bus.baseFare}
+                          </BusFare>
+                        </>
+                      )}
+                    </SummaryBox>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <DetailBox>
+                      <BusTime variant="body2">
+                        Start: {bus.startTime} | | End: {bus.endTime}
+                      </BusTime>
+                      <BusStop variant="body2">
+                        Stops: {bus.stops.join(", ")}
+                      </BusStop>
+                      <BusSeat variant="body2">
+                        Seats Available: {bus.noOfSeatsAvailable}
+                      </BusSeat>
+                      <BusSeat variant="body2">
+                        Selected Seats:{" "}
+                        {selectedSeats.return[bus.busName]?.join(", ") ||
+                          "None"}
+                      </BusSeat>
+                      {isSmallScreen
+                        ? renderRowsToColumns(
+                            bus.layout.seatConfiguration,
+                            "return",
+                            bus
+                          )
+                        : renderColumnsToRows(
+                            bus.layout.seatConfiguration,
+                            "return",
+                            bus
+                          )}
+                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                        <Button onClick={handleLegend}>
+                          {legend ? "Hide Legend" : "Show Legend"}
+                        </Button>
+                      </Box>
+                      {legend && (
+                        <>
+                          <LegendBox>
+                            <LegendGroup>
+                              <AvailableBox />
+                              <AvailableText>Available</AvailableText>
+                            </LegendGroup>
+                            <LegendGroup>
+                              <ReservedBox />
+                              <ReservedText>Reserved</ReservedText>
+                            </LegendGroup>
+                            <LegendGroup>
+                              <SelectedBox />
+                              <SelectedText>Selected</SelectedText>
+                            </LegendGroup>
+                          </LegendBox>
+                        </>
+                      )}
+                      <FareTotal variant="h6">
+                        Total Fare:
+                        <CurrencyRupeeTwoToneIcon sx={{ fontSize: "16px" }} />
+                        {fare.return}
+                      </FareTotal>
+                    </DetailBox>
+                  </AccordionDetails>
+                </NewAccordion>
+              ))}
+            </MainAccordion>
+            {outboundLength && returnLength && (
+              <Box display="flex" justifyContent="center" margin="16px 0">
+                {!bookingConfirmed.outbound || !bookingConfirmed.return ? (
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={handleBookSeats}
+                    onClick={() => handleBookSeats()}
                   >
                     Book
                   </Button>
@@ -1050,8 +1012,11 @@ const RoundBus = () => {
                 )}
               </Box>
             )}
-          </Box>
-        </>
+          </Grid>
+        </Grid>
+      )}
+      {error && (
+        <ErrorText variant="h6">No buses available for this trip</ErrorText>
       )}
       <Snackbar
         open={showMessage}
@@ -1074,44 +1039,12 @@ const RoundBus = () => {
         </Alert>
       </Snackbar>
       <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            borderRadius: 4,
-            p: { xs: 2, sm: 3, md: 4 },
-            border: "2px dashed #9e9e9e",
-            width: { xs: "90%", sm: "80%", md: 500 },
-            maxWidth: "90%",
-            overflow: "auto",
-            fontFamily: "'Roboto', sans-serif",
-          }}
-        >
-          <Typography
-            variant="h5"
-            align="center"
-            sx={{
-              fontWeight: "bold",
-              color: "#3f51b5",
-              mb: 2,
-              fontSize: { xs: "20px", sm: "24px", md: "28px" },
-            }}
-          >
-            Bus Ticket Confirmation
-          </Typography>
-          <Box
-            sx={{ borderBottom: "2px dashed #9e9e9e", paddingBottom: 2, mb: 2 }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ textDecoration: "underline", mb: 1 }}
-            >
-              Outbound Trip
-            </Typography>
+        <ConfirmBox>
+          <ConfirmHead variant="h5" gutterBottom>
+            Confirm Your Ticket
+          </ConfirmHead>
+          <ConfirmBoxRound>
+            <ConfirmHeadRound>Outbound Trip</ConfirmHeadRound>
             {selectedBus.outbound && (
               <>
                 <Typography
@@ -1161,16 +1094,9 @@ const RoundBus = () => {
                 </Typography>
               </>
             )}
-          </Box>
-          <Box
-            sx={{ borderBottom: "2px dashed #9e9e9e", paddingBottom: 2, mb: 2 }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ textDecoration: "underline", mb: 1 }}
-            >
-              Return Trip
-            </Typography>
+          </ConfirmBoxRound>
+          <ConfirmBoxRound>
+            <ConfirmHeadRound>Return Trip</ConfirmHeadRound>
             {selectedBus.return && (
               <>
                 <Typography
@@ -1220,19 +1146,18 @@ const RoundBus = () => {
                 </Typography>
               </>
             )}
-          </Box>
+          </ConfirmBoxRound>
           <Typography
             variant="h6"
             align="right"
             sx={{
               mt: 2,
               fontWeight: "bold",
-              fontSize: { xs: "16px", sm: "18px" },
             }}
           >
             Total Fare: ${fare.outbound + fare.return}
           </Typography>
-          <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+          <ConfirmButtons>
             <Button
               variant="contained"
               color="success"
@@ -1246,10 +1171,10 @@ const RoundBus = () => {
             >
               Confirm Booking
             </Button>
-          </Box>
-        </Box>
+          </ConfirmButtons>
+        </ConfirmBox>
       </Modal>
-    </Box>
+    </Grid>
   );
 };
 export default RoundBus;

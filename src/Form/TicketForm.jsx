@@ -46,6 +46,7 @@ const TicketReservationForm = () => {
       transportType: newValue,
     });
   };
+  
   const handleTripTypeChange = (event, newValue) => {
     setFormData({
       ...formData,
@@ -53,6 +54,7 @@ const TicketReservationForm = () => {
       returnDate: "",
     });
   };
+  
   const handleReverse = () => {
     setFormData((prev) => ({
       ...prev,
@@ -114,7 +116,7 @@ const TicketReservationForm = () => {
         justifyContent="center"
         alignItems="center"
         sx={{
-          height: "86vh",
+          height: "85vh",
           position: "relative",
           backgroundImage: "url(../../home.webp)",
           backgroundSize: "cover",
@@ -150,102 +152,93 @@ const TicketReservationForm = () => {
             Online Ticket Reservation
           </Typography>
           <form onSubmit={handleSubmit}>
-            <Tabs
-              value={formData.transportType}
-              onChange={handleTransportChange}
-              variant="fullWidth"
-              textColor="primary"
-              indicatorColor="primary"
-              sx={{ mb: 2, border: "1px solid #ccc", borderRadius: 1 }}
-            >
-              <Tab
-                label={
-                  <>
-                    <DirectionsBusIcon
-                      sx={{
-                        color:
-                          formData.transportType === "bus"
-                            ? "green"
-                            : "inherit",
-                      }}
-                    />
-                    Bus
-                  </>
-                }
-                value="bus"
-              />
-              <Tab
-                label={
-                  <>
-                    <TrainIcon
-                      sx={{
-                        color:
-                          formData.transportType === "train"
-                            ? "green"
-                            : "inherit",
-                      }}
-                    />
-                    Train
-                  </>
-                }
-                value="train"
-              />
-              <Tab
-                label={
-                  <>
-                    <FlightIcon
-                      sx={{
-                        color:
-                          formData.transportType === "flight"
-                            ? "green"
-                            : "inherit",
-                      }}
-                    />
-                    Flight
-                  </>
-                }
-                value="flight"
-              />
-            </Tabs>
-            <Tabs
-              value={formData.tripType}
-              onChange={handleTripTypeChange}
-              variant="fullWidth"
-              textColor="primary"
-              indicatorColor="primary"
-              sx={{ mb: 2, border: "1px solid #ccc", borderRadius: 1 }}
-            >
-              <Tab
-                label={
-                  <>
-                    <ArrowUpwardIcon
-                      sx={{
-                        color:
-                          formData.tripType === "single" ? "green" : "inherit",
-                        fontSize: "1.5rem",
-                      }}
-                    />
-                    Single Trip
-                  </>
-                }
-                value="single"
-              />
-              <Tab
-                label={
-                  <>
-                    <IoSwapVerticalOutline
-                      style={{
-                        color:
-                          formData.tripType === "round" ? "green" : "inherit",
-                        fontSize: "1.5rem",
-                      }}
-                    />
-                    Round Trip
-                  </>
-                }
-                value="round"
-              />
-            </Tabs>
+          <Tabs
+  value={formData.transportType}
+  onChange={handleTransportChange}
+  variant="fullWidth"
+  textColor="primary"
+  indicatorColor="primary"
+  sx={{ mb: 2, border: "1px solid #ccc", borderRadius: 1 }}
+>
+  <Tab
+    label={
+      <>
+        <DirectionsBusIcon
+          sx={{
+            color: formData.transportType === "bus" ? "green" : "inherit",
+          }}
+        />
+        Bus
+      </>
+    }
+    value="bus" // Matches formData.transportType
+  />
+  <Tab
+    label={
+      <>
+        <TrainIcon
+          sx={{
+            color: formData.transportType === "train" ? "green" : "inherit",
+          }}
+        />
+        Train
+      </>
+    }
+    value="train" // Matches formData.transportType
+  />
+  <Tab
+    label={
+      <>
+        <FlightIcon
+          sx={{
+            color: formData.transportType === "flight" ? "green" : "inherit",
+          }}
+        />
+        Flight
+      </>
+    }
+    value="flight" // Matches formData.transportType
+  />
+</Tabs>
+
+<Tabs
+  value={formData.tripType}
+  onChange={handleTripTypeChange}
+  variant="fullWidth"
+  textColor="primary"
+  indicatorColor="primary"
+  sx={{ mb: 2, border: "1px solid #ccc", borderRadius: 1 }}
+>
+  <Tab
+    label={
+      <>
+        <ArrowUpwardIcon
+          sx={{
+            color: formData.tripType === "single" ? "green" : "inherit",
+            fontSize: "1.5rem",
+          }}
+        />
+        Single Trip
+      </>
+    }
+    value="single" // Matches formData.tripType
+  />
+  <Tab
+    label={
+      <>
+        <IoSwapVerticalOutline
+          style={{
+            color: formData.tripType === "round" ? "green" : "inherit",
+            fontSize: "1.5rem",
+          }}
+        />
+        Round Trip
+      </>
+    }
+    value="round" // Matches formData.tripType
+  />
+</Tabs>
+
             <Grid container spacing={2} alignItems="center">
               <Grid item size={{ xs: 12, sm: 5 }}>
                 <TextField

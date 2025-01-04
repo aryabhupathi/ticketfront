@@ -15,7 +15,7 @@ import {
   CardActions,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-const Signup = () => {
+const Signup = ({toggleSignup}) => {
   const { signup, checkUserExists } = useContext(AuthContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -303,6 +303,14 @@ const Signup = () => {
           {userExists ? "Reset Password" : "Sign Up"}
         </Button>
       </CardActions>
+      <Box mt={2} textAlign="center">
+        <Typography variant="body2">
+          Already have an account?{" "}
+          <Button variant="text" color="primary" onClick={toggleSignup}>
+            Login
+          </Button>
+        </Typography>
+      </Box>
     </Card>
   );
 };
